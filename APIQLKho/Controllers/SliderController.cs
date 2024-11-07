@@ -65,7 +65,7 @@ namespace APIQLKho.Controllers
             {
                 return NotFound("Slider not found.");
             }
-            
+            //testkhoa
 
             var existingSlider = await _context.Sliders.FindAsync(id);
             if (existingSlider == null)

@@ -1,4 +1,5 @@
 ﻿using APIQLKho.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,6 +7,7 @@ namespace APIQLKho.Controllers
 {
     [ApiController]
     [Route("api/[controller]/[action]")]
+    [Authorize] // Chỉ cho phép người dùng đã đăng nhập truy cập vào controller này
     public class EmployeeController : ControllerBase
     {
         private readonly ILogger<EmployeeController> _logger;
@@ -16,6 +18,8 @@ namespace APIQLKho.Controllers
             _logger = logger;
             _context = qlkhohangContext;
         }
+
+        [AllowAnonymous] // Cho phép truy cập không cần đăng nhập
         [HttpPost("login")]
         public async Task<IActionResult> Login(string username, string password)
         {
@@ -47,7 +51,6 @@ namespace APIQLKho.Controllers
             });
         }
 
-        // GET: api/employee
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Employee>>> Get()
         {
@@ -58,7 +61,6 @@ namespace APIQLKho.Controllers
             return Ok(employees);
         }
 
-        // GET: api/employee/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<Employee>> GetById(int id)
         {
@@ -72,18 +74,10 @@ namespace APIQLKho.Controllers
             return Ok(employee);
         }
 
-        // POST: api/employee
+        [Authorize(Policy = "ManagerOnly")] // Chỉ quản lý được phép thêm nhân viên
         [HttpPost]
         public async Task<ActionResult<Employee>> CreateEmployee(Employee newEmployee)
         {
-            // Giả sử bạn có cách để xác định `Employee` hiện tại và kiểm tra quyền của họ
-            var currentUser = await GetCurrentEmployeeAsync(); // Giả định có hàm lấy `Employee` hiện tại
-
-            if (currentUser == null || currentUser.Role != 1) // Kiểm tra nếu không phải là quản lý
-            {
-                return Forbid("Chỉ quản lý mới được phép thêm nhân viên.");
-            }
-
             newEmployee.Registerdate = DateTime.Now;
             _context.Employees.Add(newEmployee);
             await _context.SaveChangesAsync();
@@ -91,7 +85,7 @@ namespace APIQLKho.Controllers
             return CreatedAtAction(nameof(GetById), new { id = newEmployee.EmployeeId }, newEmployee);
         }
 
-        // PUT: api/employee/{id}
+        [Authorize] // Chỉ cho phép người dùng đã đăng nhập
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateEmployee(int id, Employee updatedEmployee)
         {
@@ -125,17 +119,10 @@ namespace APIQLKho.Controllers
             return NoContent();
         }
 
-        // DELETE: api/employee/{id}
+        [Authorize(Policy = "ManagerOnly")] // Chỉ quản lý được phép xóa
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEmployee(int id)
         {
-            var currentUser = await GetCurrentEmployeeAsync();
-
-            if (currentUser == null || currentUser.Role != 1) // Chỉ quản lý mới được phép xóa
-            {
-                return Forbid("Chỉ quản lý mới được phép xóa nhân viên.");
-            }
-
             var employee = await _context.Employees.FindAsync(id);
             if (employee == null)
             {
@@ -147,25 +134,24 @@ namespace APIQLKho.Controllers
 
             return NoContent();
         }
+
         private async Task<Employee?> GetCurrentEmployeeAsync()
         {
-            // Giả sử Employee ID của người dùng hiện tại được lưu trong yêu cầu
-            // Ví dụ: qua User.Claims hoặc HttpContext.Session nếu đã cấu hình
             var employeeIdClaim = User.Claims.FirstOrDefault(c => c.Type == "EmployeeId");
 
             if (employeeIdClaim == null)
             {
-                return null; // Không tìm thấy Employee ID, có thể người dùng chưa đăng nhập
+                return null;
             }
 
             if (int.TryParse(employeeIdClaim.Value, out int employeeId))
             {
-                // Truy vấn cơ sở dữ liệu để lấy thông tin `Employee` hiện tại
                 return await _context.Employees.FindAsync(employeeId);
             }
 
             return null;
         }
+		
 
-    }
+	}
 }

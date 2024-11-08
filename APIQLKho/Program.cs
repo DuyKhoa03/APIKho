@@ -4,11 +4,11 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container. hahaha
+// Add services to the container. hahaha123
 
 builder.Services.AddControllers();
 var connectionString =
-builder.Configuration.GetConnectionString("DefaultConnection");s
+builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<QlkhohangContext>(options =>
  options.UseSqlServer(connectionString));
 

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace APIQLKho.Controllers
 {
-    //test
+    //test cccccccccccccccccccccccc
     [ApiController]
     [Route("api/[controller]/[action]")]
     public class CategoryController : ControllerBase

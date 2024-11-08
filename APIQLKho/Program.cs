@@ -1,12 +1,30 @@
 using APIQLKho.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// C?u hình d?ch v? xác th?c và thêm chính sách "ManagerOnly"
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/User/Login";
+        options.AccessDeniedPath = "/User/AccessDenied";
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ManagerOnly", policy =>
+        policy.RequireClaim("Role", "1")); // Role = 1 ??i di?n cho qu?n lý
+});
 // Add services to the container. hahaha
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+});
 var connectionString =
 builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<QlkhohangContext>(options =>

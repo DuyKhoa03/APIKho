@@ -4,13 +4,13 @@ using System.Text.Json.Serialization;
 
 namespace APIQLKho.Models;
 
-public partial class Menu
+public partial class Blog
 {
-    public int MenuId { get; set; }
+    public int BlogId { get; set; }
 
-    public string? Name { get; set; }
+    public string? Anh { get; set; }
 
-    public int? Order { get; set; }
+    public string? Mota { get; set; }
 
     public string? Link { get; set; }
 

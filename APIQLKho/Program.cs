@@ -18,18 +18,21 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("ManagerOnly", policy =>
         policy.RequireClaim("Role", "1")); // Role = 1 ??i di?n cho qu?n lý
 });
-// Add services to the container. hahaha
 
+// C?u hình d?ch v? JSON cho các controller
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
 });
-var connectionString =
-builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<QlkhohangContext>(options =>
- options.UseSqlServer(connectionString));
 
+
+// C?u hình chu?i k?t n?i ??n c? s? d? li?u
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<QlkhohangContext>(options =>
+    options.UseSqlServer(connectionString));
+
+// C?u hình Swagger
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -51,6 +54,7 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
 var app = builder.Build();
 
 // C?u hình ?? s? d?ng Swagger và Swagger UI
@@ -60,14 +64,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "My APIQLKho v1");
-        //c.RoutePrefix = string.Empty; // ??t Swagger UI là trang chính khi truy c?p vào root c?a ?ng d?ng
+        // c.RoutePrefix = string.Empty; // ??t Swagger UI là trang chính khi truy c?p vào root c?a ?ng d?ng
     });
-    
 }
+
 // Configure the HTTP request pipeline.
 
 app.UseHttpsRedirection();
 
+// C?u hình ?? s? d?ng xác th?c và phân quy?n
+app.UseAuthentication(); // Thêm dòng này ?? s? d?ng xác th?c
 app.UseAuthorization();
 
 app.MapControllers();

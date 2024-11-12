@@ -78,6 +78,48 @@ namespace APIQLKho.Controllers
 
             return CreatedAtAction(nameof(GetById), new { id = newDetail.MaPhieuNhapHang }, newDetail);
         }
+        [HttpPost]
+        [Route("uploadfile")]
+        public async Task<ActionResult<ChiTietPhieuNhapHang>> CreateDetailWithImage([FromForm] ChiTietPhieuNhapHangDto detailDto)
+        {
+            if (detailDto == null)
+            {
+                return BadRequest("Detail data is null.");
+            }
+
+            var newDetail = new ChiTietPhieuNhapHang
+            {
+                MaSanPham = detailDto.MaSanPham,
+                MaPhieuNhapHang = detailDto.MaPhieuNhapHang,
+                SoLuong = detailDto.SoLuong,
+                DonGiaNhap = detailDto.DonGiaNhap,
+                TrangThai = detailDto.TrangThai
+            };
+
+            // Xử lý ảnh tải lên
+            if (detailDto.Img != null && detailDto.Img.Length > 0)
+            {
+                var fileName = Path.GetFileName(detailDto.Img.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await detailDto.Img.CopyToAsync(stream);
+                }
+
+                // Giả sử bạn có trường `Image` trong `ChiTietPhieuNhapHang` để lưu đường dẫn ảnh
+                newDetail.Image = "/UploadedImages/" + fileName;
+            }
+            else
+            {
+                newDetail.Image = ""; // Trường hợp không có ảnh
+            }
+
+            _context.ChiTietPhieuNhapHangs.Add(newDetail);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetById), new { id = newDetail.MaPhieuNhapHang }, newDetail);
+        }
 
         /// <summary>
         /// Cập nhật một chi tiết phiếu nhập hàng theo mã phiếu

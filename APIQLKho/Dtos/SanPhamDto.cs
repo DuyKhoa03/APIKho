@@ -16,6 +16,7 @@
 
         public int MaHangSanXuat { get; set; }
         public string? TenHangSanXuat { get; set; } // Lấy từ HangSanXuat nếu cần
+        public IFormFile? Img { get; set; } // Để nhận file ảnh tải lên
     }
 
 }

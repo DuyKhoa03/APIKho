@@ -1,4 +1,5 @@
-﻿using APIQLKho.Models;
+﻿using APIQLKho.Dtos;
+using APIQLKho.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -71,6 +72,48 @@ namespace APIQLKho.Controllers
 
             return CreatedAtAction(nameof(GetById), new { id = newSupplier.MaNhaCungCap }, newSupplier);
         }
+        [HttpPost]
+        [Route("uploadfile")]
+        public async Task<ActionResult<NhaCungCap>> CreateSupplierWithImage([FromForm] NhaCungCapDto newSupplierDto)
+        {
+            if (newSupplierDto == null)
+            {
+                return BadRequest("Supplier data is null.");
+            }
+
+            var newSupplier = new NhaCungCap
+            {
+                TenNhaCungCap = newSupplierDto.TenNhaCungCap,
+                DiaChi = newSupplierDto.DiaChi,
+                Email = newSupplierDto.Email,
+                Sdt = newSupplierDto.Sdt
+            };
+
+            // Xử lý ảnh tải lên
+            if (newSupplierDto.Img != null && newSupplierDto.Img.Length > 0)
+            {
+                var fileName = Path.GetFileName(newSupplierDto.Img.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await newSupplierDto.Img.CopyToAsync(stream);
+                }
+
+                // Giả sử bạn có trường `Image` trong `NhaCungCap` để lưu đường dẫn ảnh
+                newSupplier.Image = "/UploadedImages/" + fileName;
+            }
+            else
+            {
+                newSupplier.Image = ""; // Trường hợp không có ảnh
+            }
+
+            _context.NhaCungCaps.Add(newSupplier);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetById), new { id = newSupplier.MaNhaCungCap }, newSupplier);
+        }
+
 
         /// <summary>
         /// Cập nhật thông tin của một nhà cung cấp dựa vào ID.

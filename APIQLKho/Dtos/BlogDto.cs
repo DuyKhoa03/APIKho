@@ -7,5 +7,6 @@
         public string? Link { get; set; }
         public bool? Hide { get; set; }
         public int MaNguoiDung { get; set; }
+        public IFormFile? Image { get; set; } // Để nhận file ảnh tải lên
     }
 }

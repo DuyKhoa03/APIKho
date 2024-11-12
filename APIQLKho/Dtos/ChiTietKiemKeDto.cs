@@ -6,6 +6,7 @@
         public int MaSanPham { get; set; }
         public int? SoLuongTon { get; set; }
         public int? TrangThai { get; set; }
+
     }
 
 }

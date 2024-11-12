@@ -86,6 +86,50 @@ namespace APIQLKho.Controllers
 
             return CreatedAtAction(nameof(GetById), new { id = newProduct.MaSanPham }, newProduct);
         }
+        [HttpPost]
+        [Route("uploadfile")]
+        public async Task<ActionResult<SanPham>> CreateProductWithImage([FromForm] SanPhamDto newProductDto)
+        {
+            if (newProductDto == null)
+            {
+                return BadRequest("Product data is null.");
+            }
+
+            var newProduct = new SanPham
+            {
+                TenSanPham = newProductDto.TenSanPham,
+                Mota = newProductDto.Mota,
+                SoLuong = newProductDto.SoLuong,
+                DonGia = newProductDto.DonGia,
+                XuatXu = newProductDto.XuatXu,
+                MaLoaiSanPham = newProductDto.MaLoaiSanPham,
+                MaHangSanXuat = newProductDto.MaHangSanXuat
+            };
+
+            // Xử lý ảnh tải lên
+            if (newProductDto.Img != null && newProductDto.Img.Length > 0)
+            {
+                var fileName = Path.GetFileName(newProductDto.Img.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await newProductDto.Img.CopyToAsync(stream);
+                }
+
+                // Giả sử bạn có trường `Image` trong `SanPham` để lưu đường dẫn ảnh
+                newProduct.Image = "/UploadedImages/" + fileName;
+            }
+            else
+            {
+                newProduct.Image = ""; // Trường hợp không có ảnh
+            }
+
+            _context.SanPhams.Add(newProduct);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetById), new { id = newProduct.MaSanPham }, newProduct);
+        }
 
         /// <summary>
         /// Cập nhật thông tin của một sản phẩm dựa vào ID.

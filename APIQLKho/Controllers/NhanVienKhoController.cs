@@ -1,4 +1,5 @@
-﻿using APIQLKho.Models;
+﻿using APIQLKho.Dtos;
+using APIQLKho.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -64,6 +65,47 @@ namespace APIQLKho.Controllers
             if (newEmployee == null)
             {
                 return BadRequest("Warehouse employee data is null.");
+            }
+
+            _context.NhanVienKhos.Add(newEmployee);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetById), new { id = newEmployee.MaNhanVienKho }, newEmployee);
+        }
+        [HttpPost]
+        [Route("uploadfile")]
+        public async Task<ActionResult<NhanVienKho>> CreateWarehouseEmployeeWithImage([FromForm] NhanVienKhoDto newEmployeeDto)
+        {
+            if (newEmployeeDto == null)
+            {
+                return BadRequest("Warehouse employee data is null.");
+            }
+
+            var newEmployee = new NhanVienKho
+            {
+                TenNhanVien = newEmployeeDto.TenNhanVien,
+                Email = newEmployeeDto.Email,
+                Sdt = newEmployeeDto.Sdt,
+                NamSinh = newEmployeeDto.NamSinh
+            };
+
+            // Xử lý ảnh tải lên
+            if (newEmployeeDto.Img != null && newEmployeeDto.Img.Length > 0)
+            {
+                var fileName = Path.GetFileName(newEmployeeDto.Img.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await newEmployeeDto.Img.CopyToAsync(stream);
+                }
+
+                //  `Hinhanh` trong `NhanVienKho` để lưu đường dẫn ảnh
+                newEmployee.Hinhanh = "/UploadedImages/" + fileName;
+            }
+            else
+            {
+                newEmployee.Hinhanh = ""; // Trường hợp không có ảnh
             }
 
             _context.NhanVienKhos.Add(newEmployee);

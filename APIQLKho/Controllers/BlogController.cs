@@ -81,6 +81,47 @@ namespace APIQLKho.Controllers
 
             return CreatedAtAction(nameof(GetById), new { id = newBlog.BlogId }, newBlog);
         }
+        [HttpPost]
+        [Route("uploadfile")]
+        public async Task<IActionResult> CreateWithImage([FromForm] BlogDto blogDto)
+        {
+            if (blogDto == null)
+            {
+                return BadRequest("Blog data is null.");
+            }
+
+            var newBlog = new Blog
+            {
+                Mota = blogDto.Mota,
+                Link = blogDto.Link,
+                Hide = blogDto.Hide,
+                MaNguoiDung = blogDto.MaNguoiDung
+            };
+
+            // Xử lý ảnh tải lên
+            if (blogDto.Image != null && blogDto.Image.Length > 0)
+            {
+                var fileName = Path.GetFileName(blogDto.Image.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await blogDto.Image.CopyToAsync(stream);
+                }
+
+                newBlog.Anh = "/UploadedImages/" + fileName;
+            }
+            else
+            {
+                newBlog.Anh = ""; // Trường hợp không có ảnh
+            }
+
+            _context.Blogs.Add(newBlog);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetById), new { id = newBlog.BlogId }, newBlog);
+        }
+
 
         /// <summary>
         /// Cập nhật thông tin của một blog dựa vào ID.

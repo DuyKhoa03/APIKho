@@ -7,7 +7,7 @@ namespace APIQLKho.Controllers
 {
     [ApiController]
     [Route("api/[controller]/[action]")]
-    [Authorize] // Chỉ cho phép người dùng đã đăng nhập truy cập vào controller này
+    //[Authorize] // Chỉ cho phép người dùng đã đăng nhập truy cập vào controller này
     public class NguoiDungController : ControllerBase
     {
         private readonly ILogger<NguoiDungController> _logger;
@@ -98,11 +98,13 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<NguoiDung>> CreateUser(NguoiDung newUser)
         {
             newUser.NgayDk = DateTime.Now;
+            newUser.MatKhau = BCrypt.Net.BCrypt.HashPassword(newUser.MatKhau); // Mã hóa mật khẩu
             _context.NguoiDungs.Add(newUser);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetById), new { id = newUser.MaNguoiDung }, newUser);
         }
+
 
         /// <summary>
         /// Cập nhật thông tin của người dùng dựa vào ID.
@@ -148,7 +150,7 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <param name="id">ID của người dùng cần xóa.</param>
         /// <returns>Không trả về nội dung nếu xóa thành công; nếu không, trả về thông báo lỗi.</returns>
-        [Authorize(Policy = "ManagerOnly")] // Chỉ quản lý được phép xóa
+        //[Authorize(Policy = "ManagerOnly")] // Chỉ quản lý được phép xóa
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {

@@ -7,7 +7,7 @@ namespace APIQLKho.Controllers
 {
     [ApiController]
     [Route("api/[controller]/[action]")]
-    //[Authorize] // Chỉ cho phép người dùng đã đăng nhập truy cập vào controller này
+    [Authorize] // Chỉ cho phép người dùng đã đăng nhập truy cập vào controller này
     public class NguoiDungController : ControllerBase
     {
         private readonly ILogger<NguoiDungController> _logger;

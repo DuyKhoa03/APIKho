@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace APIQLKho.Controllers
 {
+    //TEST
     [ApiController]
     [Route("api/[controller]/[action]")]
     public class BlogController : ControllerBase

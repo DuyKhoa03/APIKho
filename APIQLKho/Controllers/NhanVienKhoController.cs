@@ -24,11 +24,21 @@ namespace APIQLKho.Controllers
         /// <returns>Một danh sách các nhân viên kho, bao gồm thông tin kiểm kê liên quan.</returns>
         // GET: api/nhanvienkho
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<NhanVienKho>>> Get()
+        public async Task<ActionResult<IEnumerable<NhanVienKhoDto>>> Get()
         {
             var warehouseEmployees = await _context.NhanVienKhos
                                                    .Include(nv => nv.KiemKes) // Bao gồm thông tin kiểm kê
+                                                   .Select(nv => new NhanVienKhoDto
+                                                   {
+                                                       MaNhanVienKho = nv.MaNhanVienKho,
+                                                       TenNhanVien = nv.TenNhanVien,
+                                                       Email = nv.Email,
+                                                       Sdt = nv.Sdt,
+                                                       NamSinh = nv.NamSinh,
+                                                       Hinhanh = nv.Hinhanh
+                                                   })
                                                    .ToListAsync();
+
             return Ok(warehouseEmployees);
         }
 
@@ -39,11 +49,21 @@ namespace APIQLKho.Controllers
         /// <returns>Thông tin chi tiết của nhân viên kho nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
         // GET: api/nhanvienkho/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<NhanVienKho>> GetById(int id)
+        public async Task<ActionResult<NhanVienKhoDto>> GetById(int id)
         {
             var warehouseEmployee = await _context.NhanVienKhos
-                                                  .Include(nv => nv.KiemKes)
-                                                  .FirstOrDefaultAsync(nv => nv.MaNhanVienKho == id);
+                                                  .Include(nv => nv.KiemKes) // Bao gồm thông tin kiểm kê
+                                                  .Where(nv => nv.MaNhanVienKho == id)
+                                                  .Select(nv => new NhanVienKhoDto
+                                                  {
+                                                      MaNhanVienKho = nv.MaNhanVienKho,
+                                                      TenNhanVien = nv.TenNhanVien,
+                                                      Email = nv.Email,
+                                                      Sdt = nv.Sdt,
+                                                      NamSinh = nv.NamSinh,
+                                                      Hinhanh = nv.Hinhanh
+                                                  })
+                                                  .FirstOrDefaultAsync();
 
             if (warehouseEmployee == null)
             {

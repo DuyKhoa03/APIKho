@@ -24,11 +24,21 @@ namespace APIQLKho.Controllers
         /// <returns>Danh sách các nhà cung cấp, bao gồm thông tin về các phiếu nhập hàng liên quan.</returns>
         // GET: api/nhacungcap
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<NhaCungCap>>> Get()
+        public async Task<ActionResult<IEnumerable<NhaCungCapDto>>> Get()
         {
             var suppliers = await _context.NhaCungCaps
                                           .Include(ncc => ncc.PhieuNhapHangs) // Bao gồm thông tin phiếu nhập hàng
+                                          .Select(ncc => new NhaCungCapDto
+                                          {
+                                              MaNhaCungCap = ncc.MaNhaCungCap,
+                                              TenNhaCungCap = ncc.TenNhaCungCap,
+                                              DiaChi = ncc.DiaChi,
+                                              Email = ncc.Email,
+                                              Sdt = ncc.Sdt,
+                                              Image = ncc.Image
+                                          })
                                           .ToListAsync();
+
             return Ok(suppliers);
         }
 
@@ -39,11 +49,21 @@ namespace APIQLKho.Controllers
         /// <returns>Thông tin chi tiết của nhà cung cấp nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
         // GET: api/nhacungcap/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<NhaCungCap>> GetById(int id)
+        public async Task<ActionResult<NhaCungCapDto>> GetById(int id)
         {
             var supplier = await _context.NhaCungCaps
                                          .Include(ncc => ncc.PhieuNhapHangs)
-                                         .FirstOrDefaultAsync(ncc => ncc.MaNhaCungCap == id);
+                                         .Where(ncc => ncc.MaNhaCungCap == id)
+                                         .Select(ncc => new NhaCungCapDto
+                                         {
+                                             MaNhaCungCap = ncc.MaNhaCungCap,
+                                             TenNhaCungCap = ncc.TenNhaCungCap,
+                                             DiaChi = ncc.DiaChi,
+                                             Email = ncc.Email,
+                                             Sdt = ncc.Sdt,
+                                             Image = ncc.Image
+                                         })
+                                         .FirstOrDefaultAsync();
 
             if (supplier == null)
             {

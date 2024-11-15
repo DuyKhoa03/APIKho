@@ -24,13 +24,25 @@ namespace APIQLKho.Controllers
         /// <returns>Một danh sách các phiếu xuất hàng, bao gồm thông tin khách hàng, người dùng và chi tiết phiếu xuất.</returns>
         // GET: api/phieuxuathang
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<PhieuXuatHang>>> Get()
+        public async Task<ActionResult<IEnumerable<PhieuXuatHangDto>>> Get()
         {
             var exportOrders = await _context.PhieuXuatHangs
-                                             .Include(px => px.MaKhachHangNavigation) // Bao gồm thông tin khách hàng
-                                             .Include(px => px.MaNguoiDungNavigation) // Bao gồm thông tin người dùng
-                                             .Include(px => px.ChiTietPhieuXuatHangs) // Bao gồm chi tiết phiếu xuất
+                                             .Include(px => px.MaNguoiDungNavigation)
+                                             .Include(px => px.MaKhachHangNavigation)
+                                             .Select(px => new PhieuXuatHangDto
+                                             {
+                                                 MaPhieuXuatHang = px.MaPhieuXuatHang,
+                                                 NgayXuat = px.NgayXuat,
+                                                 HinhThucThanhToan = px.HinhThucThanhToan,
+                                                 PhiVanChuyen = px.PhiVanChuyen,
+                                                 TrangThai = px.TrangThai,
+                                                 MaNguoiDung = px.MaNguoiDung,
+                                                 TenNguoiDung = px.MaNguoiDungNavigation.TenNguoiDung,
+                                                 MaKhachHang = px.MaKhachHang,
+                                                 TenKhachHang = px.MaKhachHangNavigation.TenKhachHang
+                                             })
                                              .ToListAsync();
+
             return Ok(exportOrders);
         }
 
@@ -41,13 +53,25 @@ namespace APIQLKho.Controllers
         /// <returns>Thông tin chi tiết của phiếu xuất hàng nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
         // GET: api/phieuxuathang/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<PhieuXuatHang>> GetById(int id)
+        public async Task<ActionResult<PhieuXuatHangDto>> GetById(int id)
         {
             var exportOrder = await _context.PhieuXuatHangs
-                                            .Include(px => px.MaKhachHangNavigation)
                                             .Include(px => px.MaNguoiDungNavigation)
-                                            .Include(px => px.ChiTietPhieuXuatHangs)
-                                            .FirstOrDefaultAsync(px => px.MaPhieuXuatHang == id);
+                                            .Include(px => px.MaKhachHangNavigation)
+                                            .Where(px => px.MaPhieuXuatHang == id)
+                                            .Select(px => new PhieuXuatHangDto
+                                            {
+                                                MaPhieuXuatHang = px.MaPhieuXuatHang,
+                                                NgayXuat = px.NgayXuat,
+                                                HinhThucThanhToan = px.HinhThucThanhToan,
+                                                PhiVanChuyen = px.PhiVanChuyen,
+                                                TrangThai = px.TrangThai,
+                                                MaNguoiDung = px.MaNguoiDung,
+                                                TenNguoiDung = px.MaNguoiDungNavigation.TenNguoiDung,
+                                                MaKhachHang = px.MaKhachHang,
+                                                TenKhachHang = px.MaKhachHangNavigation.TenKhachHang
+                                            })
+                                            .FirstOrDefaultAsync();
 
             if (exportOrder == null)
             {

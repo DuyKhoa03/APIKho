@@ -23,13 +23,24 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <returns>Danh sách các menu sắp xếp theo thứ tự.</returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Menu>>> Get()
+        public async Task<ActionResult<IEnumerable<MenuDto>>> Get()
         {
             var menus = await _context.Menus
                                       .Include(m => m.MaNguoiDungNavigation)
                                       .Where(m => m.Hide == false)
                                       .OrderBy(m => m.Order)
+                                      .Select(m => new MenuDto
+                                      {
+                                          MenuId = m.MenuId,
+                                          Name = m.Name,
+                                          Order = m.Order,
+                                          Link = m.Link,
+                                          Hide = m.Hide,
+                                          MaNguoiDung = m.MaNguoiDung,
+                                          TenNguoiDung = m.MaNguoiDungNavigation.TenNguoiDung
+                                      })
                                       .ToListAsync();
+
             return Ok(menus);
         }
 
@@ -39,11 +50,22 @@ namespace APIQLKho.Controllers
         /// <param name="id">ID của menu cần lấy.</param>
         /// <returns>Thông tin của menu nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Menu>> GetById(int id)
+        public async Task<ActionResult<MenuDto>> GetById(int id)
         {
             var menu = await _context.Menus
                                      .Include(m => m.MaNguoiDungNavigation)
-                                     .FirstOrDefaultAsync(m => m.MenuId == id && m.Hide == false);
+                                     .Where(m => m.MenuId == id && m.Hide == false)
+                                     .Select(m => new MenuDto
+                                     {
+                                         MenuId = m.MenuId,
+                                         Name = m.Name,
+                                         Order = m.Order,
+                                         Link = m.Link,
+                                         Hide = m.Hide,
+                                         MaNguoiDung = m.MaNguoiDung,
+                                         TenNguoiDung = m.MaNguoiDungNavigation.TenNguoiDung
+                                     })
+                                     .FirstOrDefaultAsync();
 
             if (menu == null)
             {

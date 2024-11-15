@@ -22,12 +22,25 @@ namespace APIQLKho.Controllers
         /// Lấy danh sách tất cả các chi tiết phiếu xuất hàng
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ChiTietPhieuXuatHang>>> Get()
+        public async Task<ActionResult<IEnumerable<ChiTietPhieuXuatHangDto>>> Get()
         {
             var details = await _context.ChiTietPhieuXuatHangs
                                         .Include(ct => ct.MaSanPhamNavigation)
                                         .Include(ct => ct.MaPhieuXuatHangNavigation)
+                                        .Select(ct => new ChiTietPhieuXuatHangDto
+                                        {
+                                            MaSanPham = ct.MaSanPham,
+                                            TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
+                                            MaPhieuXuatHang = ct.MaPhieuXuatHang,
+                                            SoLuong = ct.SoLuong,
+                                            DonGiaXuat = ct.DonGiaXuat,
+                                            TienMat = ct.TienMat,
+                                            NganHang = ct.NganHang,
+                                            TrangThai = ct.TrangThai,
+                                            Image = ct.Image // Đường dẫn ảnh nếu có
+                                        })
                                         .ToListAsync();
+
             return Ok(details);
         }
 
@@ -36,12 +49,25 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <param name="id">Mã phiếu xuất hàng</param>
         [HttpGet("{id}")]
-        public async Task<ActionResult<ChiTietPhieuXuatHang>> GetById(int id)
+        public async Task<ActionResult<ChiTietPhieuXuatHangDto>> GetById(int id)
         {
             var detail = await _context.ChiTietPhieuXuatHangs
                                        .Include(ct => ct.MaSanPhamNavigation)
                                        .Include(ct => ct.MaPhieuXuatHangNavigation)
-                                       .FirstOrDefaultAsync(ct => ct.MaPhieuXuatHang == id);
+                                       .Where(ct => ct.MaPhieuXuatHang == id)
+                                       .Select(ct => new ChiTietPhieuXuatHangDto
+                                       {
+                                           MaSanPham = ct.MaSanPham,
+                                           TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
+                                           MaPhieuXuatHang = ct.MaPhieuXuatHang,
+                                           SoLuong = ct.SoLuong,
+                                           DonGiaXuat = ct.DonGiaXuat,
+                                           TienMat = ct.TienMat,
+                                           NganHang = ct.NganHang,
+                                           TrangThai = ct.TrangThai,
+                                           Image = ct.Image
+                                       })
+                                       .FirstOrDefaultAsync();
 
             if (detail == null)
             {

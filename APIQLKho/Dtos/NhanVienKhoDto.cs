@@ -2,6 +2,7 @@
 {
     public class NhanVienKhoDto
     {
+        public int MaNhanVienKho { get; set; }
         public string? TenNhanVien { get; set; }
         public string? Email { get; set; }
         public int? Sdt { get; set; }

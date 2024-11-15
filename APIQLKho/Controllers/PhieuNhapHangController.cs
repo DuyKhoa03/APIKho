@@ -24,13 +24,24 @@ namespace APIQLKho.Controllers
         /// <returns>Một danh sách các phiếu nhập hàng, bao gồm thông tin người dùng, nhà cung cấp và chi tiết phiếu nhập.</returns>
         // GET: api/phieunhaphang
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<PhieuNhapHang>>> Get()
+        public async Task<ActionResult<IEnumerable<PhieuNhapHangDto>>> Get()
         {
             var importOrders = await _context.PhieuNhapHangs
-                                             .Include(pn => pn.MaNguoiDungNavigation) // Bao gồm thông tin người dùng
-                                             .Include(pn => pn.MaNhaCungCapNavigation) // Bao gồm thông tin nhà cung cấp
-                                             .Include(pn => pn.ChiTietPhieuNhapHangs) // Bao gồm chi tiết phiếu nhập
+                                             .Include(pn => pn.MaNguoiDungNavigation)
+                                             .Include(pn => pn.MaNhaCungCapNavigation)
+                                             .Select(pn => new PhieuNhapHangDto
+                                             {
+                                                 MaPhieuNhapHang = pn.MaPhieuNhapHang,
+                                                 NgayNhap = pn.NgayNhap,
+                                                 PhiVanChuyen = pn.PhiVanChuyen,
+                                                 TrangThai = pn.TrangThai,
+                                                 MaNguoiDung = pn.MaNguoiDung,
+                                                 TenNguoiDung = pn.MaNguoiDungNavigation.TenNguoiDung,
+                                                 MaNhaCungCap = pn.MaNhaCungCap,
+                                                 TenNhaCungCap = pn.MaNhaCungCapNavigation.TenNhaCungCap
+                                             })
                                              .ToListAsync();
+
             return Ok(importOrders);
         }
 
@@ -41,13 +52,24 @@ namespace APIQLKho.Controllers
         /// <returns>Thông tin chi tiết của phiếu nhập hàng nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
         // GET: api/phieunhaphang/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<PhieuNhapHang>> GetById(int id)
+        public async Task<ActionResult<PhieuNhapHangDto>> GetById(int id)
         {
             var importOrder = await _context.PhieuNhapHangs
                                             .Include(pn => pn.MaNguoiDungNavigation)
                                             .Include(pn => pn.MaNhaCungCapNavigation)
-                                            .Include(pn => pn.ChiTietPhieuNhapHangs)
-                                            .FirstOrDefaultAsync(pn => pn.MaPhieuNhapHang == id);
+                                            .Where(pn => pn.MaPhieuNhapHang == id)
+                                            .Select(pn => new PhieuNhapHangDto
+                                            {
+                                                MaPhieuNhapHang = pn.MaPhieuNhapHang,
+                                                NgayNhap = pn.NgayNhap,
+                                                PhiVanChuyen = pn.PhiVanChuyen,
+                                                TrangThai = pn.TrangThai,
+                                                MaNguoiDung = pn.MaNguoiDung,
+                                                TenNguoiDung = pn.MaNguoiDungNavigation.TenNguoiDung,
+                                                MaNhaCungCap = pn.MaNhaCungCap,
+                                                TenNhaCungCap = pn.MaNhaCungCapNavigation.TenNhaCungCap
+                                            })
+                                            .FirstOrDefaultAsync();
 
             if (importOrder == null)
             {

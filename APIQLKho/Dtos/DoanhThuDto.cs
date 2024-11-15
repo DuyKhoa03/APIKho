@@ -12,7 +12,7 @@
 
         // Thông tin cơ bản về sản phẩm
         
-        //public string? TenSanPham { get; set; } // Tên sản phẩm từ SanPham
+        public string? TenSanPham { get; set; } // Tên sản phẩm từ SanPham
     }
 
 }

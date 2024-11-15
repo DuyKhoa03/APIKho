@@ -24,15 +24,26 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <returns>Danh sách các blog không bị ẩn.</returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Blog>>> Get()
+        public async Task<ActionResult<IEnumerable<BlogDto>>> Get()
         {
             var blogs = await _context.Blogs
-                                      .Include(b => b.MaNguoiDungNavigation) // Bao gồm thông tin người dùng nếu cần thiết
-                                      .Where(b => (bool)!b.Hide) // Chỉ lấy các blog không bị ẩn
+                                      .Include(b => b.MaNguoiDungNavigation)
+                                      .Where(b => (bool)!b.Hide)
+                                      .Select(b => new BlogDto
+                                      {
+                                          BlogId = b.BlogId,
+                                          Anh = b.Anh,
+                                          Mota = b.Mota,
+                                          Link = b.Link,
+                                          Hide = b.Hide,
+                                          MaNguoiDung = b.MaNguoiDung,
+                                          TenNguoiDung = b.MaNguoiDungNavigation.TenNguoiDung // Thêm tên người dùng
+                                      })
                                       .ToListAsync();
 
             return Ok(blogs);
         }
+
 
         /// <summary>
         /// Lấy thông tin chi tiết của một blog dựa vào ID.
@@ -40,19 +51,31 @@ namespace APIQLKho.Controllers
         /// <param name="id">ID của blog cần lấy.</param>
         /// <returns>Thông tin của blog nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Blog>> GetById(int id)
+        public async Task<ActionResult<BlogDto>> GetById(int id)
         {
             var blog = await _context.Blogs
                                      .Include(b => b.MaNguoiDungNavigation)
-                                     .FirstOrDefaultAsync(b => b.BlogId == id);
+                                     .Where(b => b.BlogId == id && b.Hide == false)
+                                     .Select(b => new BlogDto
+                                     {
+                                         BlogId = b.BlogId,
+                                         Anh = b.Anh,
+                                         Mota = b.Mota,
+                                         Link = b.Link,
+                                         Hide = b.Hide,
+                                         MaNguoiDung = b.MaNguoiDung,
+                                         TenNguoiDung = b.MaNguoiDungNavigation.TenNguoiDung
+                                     })
+                                     .FirstOrDefaultAsync();
 
-            if (blog == null || blog.Hide == true)
+            if (blog == null)
             {
                 return NotFound("Blog not found.");
             }
 
             return Ok(blog);
         }
+
 
         /// <summary>
         /// Tạo mới một blog.
@@ -196,7 +219,7 @@ namespace APIQLKho.Controllers
         /// <returns>Danh sách các blog có chứa từ khóa và không bị ẩn.</returns>
         // GET: api/blog/search/{keyword}
         [HttpGet("{keyword}")]
-        public async Task<ActionResult<IEnumerable<Blog>>> Search(string keyword)
+        public async Task<ActionResult<IEnumerable<BlogDto>>> Search(string keyword)
         {
             if (string.IsNullOrWhiteSpace(keyword))
             {
@@ -206,6 +229,16 @@ namespace APIQLKho.Controllers
             var searchResults = await _context.Blogs
                                               .Include(b => b.MaNguoiDungNavigation)
                                               .Where(b => (b.Mota.Contains(keyword) || b.MaNguoiDungNavigation.TenNguoiDung.Contains(keyword)) && b.Hide == false)
+                                              .Select(b => new BlogDto
+                                              {
+                                                  BlogId = b.BlogId,
+                                                  Anh = b.Anh,
+                                                  Mota = b.Mota,
+                                                  Link = b.Link,
+                                                  Hide = b.Hide,
+                                                  MaNguoiDung = b.MaNguoiDung,
+                                                  TenNguoiDung = b.MaNguoiDungNavigation.TenNguoiDung
+                                              })
                                               .ToListAsync();
 
             return Ok(searchResults);

@@ -3,6 +3,7 @@
     public class ChiTietPhieuXuatHangDto
     {
         public int MaSanPham { get; set; }
+        public string? TenSanPham { get; set; }
         public int MaPhieuXuatHang { get; set; }
         public int? SoLuong { get; set; }
         public decimal? DonGiaXuat { get; set; }

@@ -22,12 +22,23 @@ namespace APIQLKho.Controllers
         /// Lấy danh sách tất cả các chi tiết phiếu nhập hàng
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ChiTietPhieuNhapHang>>> Get()
+        public async Task<ActionResult<IEnumerable<ChiTietPhieuNhapHangDto>>> Get()
         {
             var details = await _context.ChiTietPhieuNhapHangs
                                         .Include(ct => ct.MaSanPhamNavigation)
                                         .Include(ct => ct.MaPhieuNhapHangNavigation)
+                                        .Select(ct => new ChiTietPhieuNhapHangDto
+                                        {
+                                            MaPhieuNhapHang = ct.MaPhieuNhapHang,
+                                            MaSanPham = ct.MaSanPham,
+                                            TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
+                                            SoLuong = ct.SoLuong,
+                                            DonGiaNhap = ct.DonGiaNhap,
+                                            TrangThai = ct.TrangThai,
+                                            Image = ct.Image // Trả về đường dẫn ảnh nếu có
+                                        })
                                         .ToListAsync();
+
             return Ok(details);
         }
 
@@ -36,12 +47,23 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <param name="id">Mã phiếu nhập hàng</param>
         [HttpGet("{id}")]
-        public async Task<ActionResult<ChiTietPhieuNhapHang>> GetById(int id)
+        public async Task<ActionResult<ChiTietPhieuNhapHangDto>> GetById(int id)
         {
             var detail = await _context.ChiTietPhieuNhapHangs
                                        .Include(ct => ct.MaSanPhamNavigation)
                                        .Include(ct => ct.MaPhieuNhapHangNavigation)
-                                       .FirstOrDefaultAsync(ct => ct.MaPhieuNhapHang == id);
+                                       .Where(ct => ct.MaPhieuNhapHang == id)
+                                       .Select(ct => new ChiTietPhieuNhapHangDto
+                                       {
+                                           MaPhieuNhapHang = ct.MaPhieuNhapHang,
+                                           MaSanPham = ct.MaSanPham,
+                                           TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
+                                           SoLuong = ct.SoLuong,
+                                           DonGiaNhap = ct.DonGiaNhap,
+                                           TrangThai = ct.TrangThai,
+                                           Image = ct.Image
+                                       })
+                                       .FirstOrDefaultAsync();
 
             if (detail == null)
             {

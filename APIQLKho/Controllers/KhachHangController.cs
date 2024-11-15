@@ -23,12 +23,19 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <returns>Danh sách các khách hàng.</returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<KhachHang>>> Get()
+        public async Task<ActionResult<IEnumerable<KhachHangDto>>> Get()
         {
             var customers = await _context.KhachHangs
                                           .Include(kh => kh.MaLoaiNavigation)
-                                          .Include(kh => kh.PhieuXuatHangs)
+                                          .Select(kh => new KhachHangDto
+                                          {
+                                              MaKhachHang = kh.MaKhachHang,
+                                              TenKhachHang = kh.TenKhachHang,
+                                              MaLoai = kh.MaLoai,
+                                              TenLoaiKhachHang = kh.MaLoaiNavigation.TenLoai
+                                          })
                                           .ToListAsync();
+
             return Ok(customers);
         }
 
@@ -38,12 +45,19 @@ namespace APIQLKho.Controllers
         /// <param name="id">ID của khách hàng cần lấy.</param>
         /// <returns>Thông tin của khách hàng nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
         [HttpGet("{id}")]
-        public async Task<ActionResult<KhachHang>> GetById(int id)
+        public async Task<ActionResult<KhachHangDto>> GetById(int id)
         {
             var customer = await _context.KhachHangs
                                          .Include(kh => kh.MaLoaiNavigation)
-                                         .Include(kh => kh.PhieuXuatHangs)
-                                         .FirstOrDefaultAsync(kh => kh.MaKhachHang == id);
+                                         .Where(kh => kh.MaKhachHang == id)
+                                         .Select(kh => new KhachHangDto
+                                         {
+                                             MaKhachHang = kh.MaKhachHang,
+                                             TenKhachHang = kh.TenKhachHang,
+                                             MaLoai = kh.MaLoai,
+                                             TenLoaiKhachHang = kh.MaLoaiNavigation.TenLoai
+                                         })
+                                         .FirstOrDefaultAsync();
 
             if (customer == null)
             {

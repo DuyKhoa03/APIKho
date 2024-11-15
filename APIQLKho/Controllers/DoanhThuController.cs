@@ -23,11 +23,21 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <returns>Danh sách các bản ghi doanh thu.</returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<DoanhThu>>> Get()
+        public async Task<ActionResult<IEnumerable<DoanhThuDto>>> Get()
         {
-            // Lấy tất cả các bản ghi doanh thu và bao gồm thông tin sản phẩm liên quan.
             var revenues = await _context.DoanhThus
-                .Include(dt => dt.MaSanPhamNavigation) // Bao gồm thông tin sản phẩm
+                .Include(dt => dt.MaSanPhamNavigation)
+                .Select(dt => new DoanhThuDto
+                {
+                    MaDoanhThu = dt.MaDoanhThu,
+                    MaSanPham = dt.MaSanPham,
+                    TenSanPham = dt.MaSanPhamNavigation.TenSanPham,
+                    TongPhiNhap = dt.TongPhiNhap,
+                    TongPhiXuat = dt.TongPhiXuat,
+                    PhiVanHanh = dt.PhiVanHanh,
+                    DoanhThuNgay = dt.DoanhThuNgay,
+                    NgayCapNhat = dt.NgayCapNhat
+                })
                 .ToListAsync();
 
             return Ok(revenues);
@@ -39,12 +49,23 @@ namespace APIQLKho.Controllers
         /// <param name="id">ID của bản ghi doanh thu cần lấy.</param>
         /// <returns>Thông tin của bản ghi doanh thu nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
         [HttpGet("{id}")]
-        public async Task<ActionResult<DoanhThu>> GetById(int id)
+        public async Task<ActionResult<DoanhThuDto>> GetById(int id)
         {
-            // Tìm và trả về bản ghi doanh thu theo ID
             var revenue = await _context.DoanhThus
-                .Include(dt => dt.MaSanPhamNavigation) // Bao gồm thông tin sản phẩm
-                .FirstOrDefaultAsync(dt => dt.MaDoanhThu == id);
+                .Include(dt => dt.MaSanPhamNavigation)
+                .Where(dt => dt.MaDoanhThu == id)
+                .Select(dt => new DoanhThuDto
+                {
+                    MaDoanhThu = dt.MaDoanhThu,
+                    MaSanPham = dt.MaSanPham,
+                    TenSanPham = dt.MaSanPhamNavigation.TenSanPham,
+                    TongPhiNhap = dt.TongPhiNhap,
+                    TongPhiXuat = dt.TongPhiXuat,
+                    PhiVanHanh = dt.PhiVanHanh,
+                    DoanhThuNgay = dt.DoanhThuNgay,
+                    NgayCapNhat = dt.NgayCapNhat
+                })
+                .FirstOrDefaultAsync();
 
             if (revenue == null)
             {

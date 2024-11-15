@@ -23,12 +23,19 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <returns>Danh sách các phiếu kiểm kê.</returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<KiemKe>>> Get()
+        public async Task<ActionResult<IEnumerable<KiemKeDto>>> Get()
         {
             var inventoryChecks = await _context.KiemKes
                                                 .Include(k => k.MaNhanVienKhoNavigation)
-                                                .Include(k => k.ChiTietKiemKes)
+                                                .Select(k => new KiemKeDto
+                                                {
+                                                    MaKiemKe = k.MaKiemKe,
+                                                    NgayKiemKe = k.NgayKiemKe,
+                                                    MaNhanVienKho = k.MaNhanVienKho,
+                                                    TenNhanVienKho = k.MaNhanVienKhoNavigation.TenNhanVien
+                                                })
                                                 .ToListAsync();
+
             return Ok(inventoryChecks);
         }
 
@@ -38,12 +45,19 @@ namespace APIQLKho.Controllers
         /// <param name="id">ID của phiếu kiểm kê cần lấy.</param>
         /// <returns>Thông tin của phiếu kiểm kê nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
         [HttpGet("{id}")]
-        public async Task<ActionResult<KiemKe>> GetById(int id)
+        public async Task<ActionResult<KiemKeDto>> GetById(int id)
         {
             var inventoryCheck = await _context.KiemKes
                                                .Include(k => k.MaNhanVienKhoNavigation)
-                                               .Include(k => k.ChiTietKiemKes)
-                                               .FirstOrDefaultAsync(k => k.MaKiemKe == id);
+                                               .Where(k => k.MaKiemKe == id)
+                                               .Select(k => new KiemKeDto
+                                               {
+                                                   MaKiemKe = k.MaKiemKe,
+                                                   NgayKiemKe = k.NgayKiemKe,
+                                                   MaNhanVienKho = k.MaNhanVienKho,
+                                                   TenNhanVienKho = k.MaNhanVienKhoNavigation.TenNhanVien
+                                               })
+                                               .FirstOrDefaultAsync();
 
             if (inventoryCheck == null)
             {

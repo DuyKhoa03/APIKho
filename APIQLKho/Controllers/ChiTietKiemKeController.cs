@@ -22,12 +22,21 @@ namespace APIQLKho.Controllers
         /// Lấy danh sách tất cả các chi tiết kiểm kê
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ChiTietKiemKe>>> Get()
+        public async Task<ActionResult<IEnumerable<ChiTietKiemKeDto>>> Get()
         {
             var details = await _context.ChiTietKiemKes
                                         .Include(ct => ct.MaSanPhamNavigation)
                                         .Include(ct => ct.MaKiemKeNavigation)
+                                        .Select(ct => new ChiTietKiemKeDto
+                                        {
+                                            MaKiemKe = ct.MaKiemKe,
+                                            MaSanPham = ct.MaSanPham,
+                                            TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
+                                            SoLuongTon = ct.SoLuongTon,
+                                            TrangThai = ct.TrangThai
+                                        })
                                         .ToListAsync();
+
             return Ok(details);
         }
 
@@ -36,12 +45,21 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <param name="id">Mã kiểm kê</param>
         [HttpGet("{id}")]
-        public async Task<ActionResult<ChiTietKiemKe>> GetById(int id)
+        public async Task<ActionResult<ChiTietKiemKeDto>> GetById(int id)
         {
             var detail = await _context.ChiTietKiemKes
                                        .Include(ct => ct.MaSanPhamNavigation)
                                        .Include(ct => ct.MaKiemKeNavigation)
-                                       .FirstOrDefaultAsync(ct => ct.MaKiemKe == id);
+                                       .Where(ct => ct.MaKiemKe == id)
+                                       .Select(ct => new ChiTietKiemKeDto
+                                       {
+                                           MaKiemKe = ct.MaKiemKe,
+                                           MaSanPham = ct.MaSanPham,
+                                           TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
+                                           SoLuongTon = ct.SoLuongTon,
+                                           TrangThai = ct.TrangThai
+                                       })
+                                       .FirstOrDefaultAsync();
 
             if (detail == null)
             {

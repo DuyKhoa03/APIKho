@@ -24,12 +24,27 @@ namespace APIQLKho.Controllers
         /// <returns>Một danh sách các sản phẩm, bao gồm thông tin loại sản phẩm và hãng sản xuất.</returns>
         // GET: api/sanpham
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<SanPham>>> Get()
+        public async Task<ActionResult<IEnumerable<SanPhamDto>>> Get()
         {
             var products = await _context.SanPhams
-                                         .Include(sp => sp.MaLoaiSanPhamNavigation) // Bao gồm thông tin loại sản phẩm
-                                         .Include(sp => sp.MaHangSanXuatNavigation) // Bao gồm thông tin hãng sản xuất
+                                         .Include(sp => sp.MaLoaiSanPhamNavigation)
+                                         .Include(sp => sp.MaHangSanXuatNavigation)
+                                         .Select(sp => new SanPhamDto
+                                         {
+                                             MaSanPham = sp.MaSanPham,
+                                             TenSanPham = sp.TenSanPham,
+                                             Mota = sp.Mota,
+                                             SoLuong = sp.SoLuong,
+                                             DonGia = sp.DonGia,
+                                             XuatXu = sp.XuatXu,
+                                             Image = sp.Image,
+                                             MaLoaiSanPham = sp.MaLoaiSanPham,
+                                             TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
+                                             MaHangSanXuat = sp.MaHangSanXuat,
+                                             TenHangSanXuat = sp.MaHangSanXuatNavigation.TenHangSanXuat
+                                         })
                                          .ToListAsync();
+
             return Ok(products);
         }
 
@@ -40,12 +55,27 @@ namespace APIQLKho.Controllers
         /// <returns>Thông tin chi tiết của sản phẩm nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
         // GET: api/sanpham/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<SanPham>> GetById(int id)
+        public async Task<ActionResult<SanPhamDto>> GetById(int id)
         {
             var product = await _context.SanPhams
                                         .Include(sp => sp.MaLoaiSanPhamNavigation)
                                         .Include(sp => sp.MaHangSanXuatNavigation)
-                                        .FirstOrDefaultAsync(sp => sp.MaSanPham == id);
+                                        .Where(sp => sp.MaSanPham == id)
+                                        .Select(sp => new SanPhamDto
+                                        {
+                                            MaSanPham = sp.MaSanPham,
+                                            TenSanPham = sp.TenSanPham,
+                                            Mota = sp.Mota,
+                                            SoLuong = sp.SoLuong,
+                                            DonGia = sp.DonGia,
+                                            XuatXu = sp.XuatXu,
+                                            Image = sp.Image,
+                                            MaLoaiSanPham = sp.MaLoaiSanPham,
+                                            TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
+                                            MaHangSanXuat = sp.MaHangSanXuat,
+                                            TenHangSanXuat = sp.MaHangSanXuatNavigation.TenHangSanXuat
+                                        })
+                                        .FirstOrDefaultAsync();
 
             if (product == null)
             {

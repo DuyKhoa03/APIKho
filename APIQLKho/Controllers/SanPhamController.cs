@@ -239,7 +239,7 @@ namespace APIQLKho.Controllers
         /// <returns>Danh sách các sản phẩm phù hợp với từ khóa.</returns>
         // GET: api/sanpham/search
         [HttpGet("{keyword}")]
-        public async Task<ActionResult<IEnumerable<SanPham>>> Search(string keyword)
+        public async Task<ActionResult<IEnumerable<SanPhamDto>>> Search(string keyword)
         {
             if (string.IsNullOrWhiteSpace(keyword))
             {

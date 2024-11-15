@@ -73,10 +73,11 @@ if (app.Environment.IsDevelopment())
 //Ví dụ: ảnh có tên example.jpg sẽ có URL là http://localhost:5000/images/example.jpg.
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages")),
-    RequestPath = "/images"
+	FileProvider = new PhysicalFileProvider(
+		Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages")),
+	RequestPath = "/UploadedImages"
 });
+
 
 // Configure the HTTP request pipeline.
 

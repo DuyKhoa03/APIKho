@@ -91,31 +91,31 @@ namespace APIQLKho.Controllers
         /// <param name="newProductDto">Thông tin sản phẩm mới cần thêm (dữ liệu từ DTO).</param>
         /// <returns>Sản phẩm vừa được tạo nếu thành công; nếu không, trả về thông báo lỗi.</returns>
         // POST: api/sanpham
-        [HttpPost]
-        public async Task<ActionResult<SanPham>> CreateProduct(SanPhamDto newProductDto)
-        {
-            if (newProductDto == null)
-            {
-                return BadRequest("Product data is null.");
-            }
+        //[HttpPost]
+        //public async Task<ActionResult<SanPham>> CreateProduct(SanPhamDto newProductDto)
+        //{
+        //    if (newProductDto == null)
+        //    {
+        //        return BadRequest("Product data is null.");
+        //    }
 
-            var newProduct = new SanPham
-            {
-                TenSanPham = newProductDto.TenSanPham,
-                Mota = newProductDto.Mota,
-                SoLuong = newProductDto.SoLuong,
-                DonGia = newProductDto.DonGia,
-                XuatXu = newProductDto.XuatXu,
-                Image = newProductDto.Image,
-                MaLoaiSanPham = newProductDto.MaLoaiSanPham,
-                MaHangSanXuat = newProductDto.MaHangSanXuat
-            };
+        //    var newProduct = new SanPham
+        //    {
+        //        TenSanPham = newProductDto.TenSanPham,
+        //        Mota = newProductDto.Mota,
+        //        SoLuong = newProductDto.SoLuong,
+        //        DonGia = newProductDto.DonGia,
+        //        XuatXu = newProductDto.XuatXu,
+        //        Image = newProductDto.Image,
+        //        MaLoaiSanPham = newProductDto.MaLoaiSanPham,
+        //        MaHangSanXuat = newProductDto.MaHangSanXuat
+        //    };
 
-            _context.SanPhams.Add(newProduct);
-            await _context.SaveChangesAsync();
+        //    _context.SanPhams.Add(newProduct);
+        //    await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById), new { id = newProduct.MaSanPham }, newProduct);
-        }
+        //    return CreatedAtAction(nameof(GetById), new { id = newProduct.MaSanPham }, newProduct);
+        //}
         [HttpPost]
         [Route("uploadfile")]
         public async Task<ActionResult<SanPham>> CreateProductWithImage([FromForm] SanPhamDto newProductDto)
@@ -169,7 +169,7 @@ namespace APIQLKho.Controllers
         /// <returns>Không trả về nội dung nếu cập nhật thành công; nếu không, trả về thông báo lỗi.</returns>
         // PUT: api/sanpham/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, SanPhamDto updatedProductDto)
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] SanPhamDto updatedProductDto)
         {
             if (updatedProductDto == null)
             {
@@ -182,15 +182,43 @@ namespace APIQLKho.Controllers
                 return NotFound("Product not found.");
             }
 
-            // Cập nhật các thuộc tính của sản phẩm
+            // Cập nhật các thuộc tính của sản phẩm (không bao gồm ảnh)
             existingProduct.TenSanPham = updatedProductDto.TenSanPham;
             existingProduct.Mota = updatedProductDto.Mota;
             existingProduct.SoLuong = updatedProductDto.SoLuong;
             existingProduct.DonGia = updatedProductDto.DonGia;
             existingProduct.XuatXu = updatedProductDto.XuatXu;
-            existingProduct.Image = updatedProductDto.Image;
             existingProduct.MaLoaiSanPham = updatedProductDto.MaLoaiSanPham;
             existingProduct.MaHangSanXuat = updatedProductDto.MaHangSanXuat;
+
+            // Xử lý ảnh nếu có tải lên ảnh mới
+            if (updatedProductDto.Img != null && updatedProductDto.Img.Length > 0)
+            {
+                // Đường dẫn ảnh cũ
+                var oldImagePath = existingProduct.Image;
+
+                // Lưu ảnh mới
+                var fileName = Path.GetFileName(updatedProductDto.Img.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await updatedProductDto.Img.CopyToAsync(stream);
+                }
+
+                // Cập nhật đường dẫn ảnh mới
+                existingProduct.Image = "/UploadedImages/" + fileName;
+
+                // Xóa ảnh cũ nếu tồn tại
+                if (!string.IsNullOrEmpty(oldImagePath))
+                {
+                    var fullOldImagePath = Path.Combine(Directory.GetCurrentDirectory(), oldImagePath.TrimStart('/'));
+                    if (System.IO.File.Exists(fullOldImagePath))
+                    {
+                        System.IO.File.Delete(fullOldImagePath);
+                    }
+                }
+            }
 
             try
             {
@@ -210,6 +238,7 @@ namespace APIQLKho.Controllers
 
             return NoContent();
         }
+
 
         /// <summary>
         /// Xóa một sản phẩm dựa vào ID.

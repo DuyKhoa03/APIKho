@@ -82,28 +82,28 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <param name="newBlogDto">Thông tin của blog mới cần tạo.</param>
         /// <returns>Blog vừa được tạo nếu thành công; nếu không, trả về thông báo lỗi.</returns>
-        [HttpPost]
-        public async Task<ActionResult<Blog>> Create(BlogDto newBlogDto)
-        {
-            if (newBlogDto == null)
-            {
-                return BadRequest("Blog data is null.");
-            }
+        //[HttpPost]
+        //public async Task<ActionResult<Blog>> Create(BlogDto newBlogDto)
+        //{
+        //    if (newBlogDto == null)
+        //    {
+        //        return BadRequest("Blog data is null.");
+        //    }
 
-            var newBlog = new Blog
-            {
-                Anh = newBlogDto.Anh,
-                Mota = newBlogDto.Mota,
-                Link = newBlogDto.Link,
-                Hide = newBlogDto.Hide,
-                MaNguoiDung = newBlogDto.MaNguoiDung
-            };
+        //    var newBlog = new Blog
+        //    {
+        //        Anh = newBlogDto.Anh,
+        //        Mota = newBlogDto.Mota,
+        //        Link = newBlogDto.Link,
+        //        Hide = newBlogDto.Hide,
+        //        MaNguoiDung = newBlogDto.MaNguoiDung
+        //    };
 
-            _context.Blogs.Add(newBlog);
-            await _context.SaveChangesAsync();
+        //    _context.Blogs.Add(newBlog);
+        //    await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById), new { id = newBlog.BlogId }, newBlog);
-        }
+        //    return CreatedAtAction(nameof(GetById), new { id = newBlog.BlogId }, newBlog);
+        //}
         [HttpPost]
         [Route("uploadfile")]
         public async Task<IActionResult> CreateWithImage([FromForm] BlogDto blogDto)
@@ -153,7 +153,7 @@ namespace APIQLKho.Controllers
         /// <param name="updatedBlogDto">Thông tin mới của blog.</param>
         /// <returns>Không trả về nội dung nếu cập nhật thành công; nếu không, trả về thông báo lỗi.</returns>
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, BlogDto updatedBlogDto)
+        public async Task<IActionResult> Update(int id, [FromForm] BlogDto updatedBlogDto)
         {
             if (updatedBlogDto == null)
             {
@@ -166,12 +166,36 @@ namespace APIQLKho.Controllers
                 return NotFound("Blog not found.");
             }
 
-            // Cập nhật các thuộc tính
-            existingBlog.Anh = updatedBlogDto.Anh;
+            // Cập nhật các thuộc tính không liên quan đến ảnh
             existingBlog.Mota = updatedBlogDto.Mota;
             existingBlog.Link = updatedBlogDto.Link;
             existingBlog.Hide = updatedBlogDto.Hide;
             existingBlog.MaNguoiDung = updatedBlogDto.MaNguoiDung;
+
+            // Xử lý ảnh tải lên
+            if (updatedBlogDto.Image != null && updatedBlogDto.Image.Length > 0)
+            {
+                // Xóa ảnh cũ nếu có
+                if (!string.IsNullOrEmpty(existingBlog.Anh))
+                {
+                    var oldImagePath = Path.Combine(Directory.GetCurrentDirectory(), existingBlog.Anh.TrimStart('/'));
+                    if (System.IO.File.Exists(oldImagePath))
+                    {
+                        System.IO.File.Delete(oldImagePath);
+                    }
+                }
+
+                // Lưu ảnh mới
+                var fileName = Path.GetFileName(updatedBlogDto.Image.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await updatedBlogDto.Image.CopyToAsync(stream);
+                }
+
+                existingBlog.Anh = "/UploadedImages/" + fileName;
+            }
 
             try
             {
@@ -206,8 +230,18 @@ namespace APIQLKho.Controllers
                 return NotFound("Blog not found.");
             }
 
-            // Ẩn blog thay vì xóa hoàn toàn
-            blog.Hide = true;
+            // Xóa ảnh cũ nếu có
+            if (!string.IsNullOrEmpty(blog.Anh))
+            {
+                var imagePath = Path.Combine(Directory.GetCurrentDirectory(), blog.Anh.TrimStart('/'));
+                if (System.IO.File.Exists(imagePath))
+                {
+                    System.IO.File.Delete(imagePath);
+                }
+            }
+
+            // Xóa blog khỏi database
+            _context.Blogs.Remove(blog);
             await _context.SaveChangesAsync();
 
             return NoContent();

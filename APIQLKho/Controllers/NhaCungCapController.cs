@@ -143,7 +143,7 @@ namespace APIQLKho.Controllers
         /// <returns>Không trả về nội dung nếu cập nhật thành công; nếu không, trả về thông báo lỗi.</returns>
         // PUT: api/nhacungcap/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateSupplier(int id, NhaCungCap updatedSupplier)
+        public async Task<IActionResult> UpdateSupplier(int id, [FromForm] NhaCungCapDto updatedSupplierDto)
         {
             var existingSupplier = await _context.NhaCungCaps.FindAsync(id);
             if (existingSupplier == null)
@@ -151,12 +151,36 @@ namespace APIQLKho.Controllers
                 return NotFound("Supplier not found.");
             }
 
-            // Cập nhật các thuộc tính của nhà cung cấp
-            existingSupplier.TenNhaCungCap = updatedSupplier.TenNhaCungCap;
-            existingSupplier.DiaChi = updatedSupplier.DiaChi;
-            existingSupplier.Email = updatedSupplier.Email;
-            existingSupplier.Sdt = updatedSupplier.Sdt;
-            existingSupplier.Image = updatedSupplier.Image;
+            // Cập nhật các thuộc tính không liên quan đến ảnh
+            existingSupplier.TenNhaCungCap = updatedSupplierDto.TenNhaCungCap;
+            existingSupplier.DiaChi = updatedSupplierDto.DiaChi;
+            existingSupplier.Email = updatedSupplierDto.Email;
+            existingSupplier.Sdt = updatedSupplierDto.Sdt;
+
+            // Xử lý cập nhật hình ảnh
+            if (updatedSupplierDto.Img != null && updatedSupplierDto.Img.Length > 0)
+            {
+                // Xóa hình ảnh cũ nếu có
+                if (!string.IsNullOrEmpty(existingSupplier.Image))
+                {
+                    var oldImagePath = Path.Combine(Directory.GetCurrentDirectory(), existingSupplier.Image.TrimStart('/'));
+                    if (System.IO.File.Exists(oldImagePath))
+                    {
+                        System.IO.File.Delete(oldImagePath);
+                    }
+                }
+
+                // Lưu hình ảnh mới
+                var fileName = Path.GetFileName(updatedSupplierDto.Img.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await updatedSupplierDto.Img.CopyToAsync(stream);
+                }
+
+                existingSupplier.Image = "/UploadedImages/" + fileName;
+            }
 
             try
             {
@@ -177,6 +201,7 @@ namespace APIQLKho.Controllers
             return NoContent();
         }
 
+
         /// <summary>
         /// Xóa một nhà cung cấp dựa vào ID.
         /// </summary>
@@ -192,12 +217,23 @@ namespace APIQLKho.Controllers
                 return NotFound("Supplier not found.");
             }
 
+            // Xóa ảnh cũ nếu có
+            if (!string.IsNullOrEmpty(supplier.Image))
+            {
+                var imagePath = Path.Combine(Directory.GetCurrentDirectory(), supplier.Image.TrimStart('/'));
+                if (System.IO.File.Exists(imagePath))
+                {
+                    System.IO.File.Delete(imagePath);
+                }
+            }
+
             // Xóa nhà cung cấp khỏi cơ sở dữ liệu
             _context.NhaCungCaps.Remove(supplier);
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
+
         /// <summary>
         /// Tìm kiếm nhà cung cấp dựa trên từ khóa trong tên hoặc địa chỉ.
         /// </summary>

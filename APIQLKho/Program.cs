@@ -55,8 +55,17 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 var app = builder.Build();
+app.UseCors("AllowAll");
 
 // C?u hình ?? s? d?ng Swagger và Swagger UI
 if (app.Environment.IsDevelopment())

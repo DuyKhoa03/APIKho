@@ -84,38 +84,6 @@ namespace APIQLKho.Controllers
 
             return Ok(product);
         }
-
-        /// <summary>
-        /// Thêm mới một sản phẩm vào cơ sở dữ liệu.
-        /// </summary>
-        /// <param name="newProductDto">Thông tin sản phẩm mới cần thêm (dữ liệu từ DTO).</param>
-        /// <returns>Sản phẩm vừa được tạo nếu thành công; nếu không, trả về thông báo lỗi.</returns>
-        // POST: api/sanpham
-        //[HttpPost]
-        //public async Task<ActionResult<SanPham>> CreateProduct(SanPhamDto newProductDto)
-        //{
-        //    if (newProductDto == null)
-        //    {
-        //        return BadRequest("Product data is null.");
-        //    }
-
-        //    var newProduct = new SanPham
-        //    {
-        //        TenSanPham = newProductDto.TenSanPham,
-        //        Mota = newProductDto.Mota,
-        //        SoLuong = newProductDto.SoLuong,
-        //        DonGia = newProductDto.DonGia,
-        //        XuatXu = newProductDto.XuatXu,
-        //        Image = newProductDto.Image,
-        //        MaLoaiSanPham = newProductDto.MaLoaiSanPham,
-        //        MaHangSanXuat = newProductDto.MaHangSanXuat
-        //    };
-
-        //    _context.SanPhams.Add(newProduct);
-        //    await _context.SaveChangesAsync();
-
-        //    return CreatedAtAction(nameof(GetById), new { id = newProduct.MaSanPham }, newProduct);
-        //}
         [HttpPost]
         [Route("uploadfile")]
         public async Task<ActionResult<SanPham>> CreateProductWithImage([FromForm] SanPhamDto newProductDto)

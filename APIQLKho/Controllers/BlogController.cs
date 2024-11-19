@@ -82,28 +82,7 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <param name="newBlogDto">Thông tin của blog mới cần tạo.</param>
         /// <returns>Blog vừa được tạo nếu thành công; nếu không, trả về thông báo lỗi.</returns>
-        //[HttpPost]
-        //public async Task<ActionResult<Blog>> Create(BlogDto newBlogDto)
-        //{
-        //    if (newBlogDto == null)
-        //    {
-        //        return BadRequest("Blog data is null.");
-        //    }
-
-        //    var newBlog = new Blog
-        //    {
-        //        Anh = newBlogDto.Anh,
-        //        Mota = newBlogDto.Mota,
-        //        Link = newBlogDto.Link,
-        //        Hide = newBlogDto.Hide,
-        //        MaNguoiDung = newBlogDto.MaNguoiDung
-        //    };
-
-        //    _context.Blogs.Add(newBlog);
-        //    await _context.SaveChangesAsync();
-
-        //    return CreatedAtAction(nameof(GetById), new { id = newBlog.BlogId }, newBlog);
-        //}
+        
         [HttpPost]
         [Route("uploadfile")]
         public async Task<IActionResult> CreateWithImage([FromForm] BlogDto blogDto)

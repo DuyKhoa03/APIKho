@@ -162,21 +162,27 @@ namespace APIQLKho.Controllers
         /// <returns>Danh sách các khách hàng có tên phù hợp với từ khóa tìm kiếm.</returns>
         // GET: api/khachhang/search
         [HttpGet("{keyword}")]
-        public async Task<ActionResult<IEnumerable<KhachHang>>> Search(string keyword)
-        {
-            if (string.IsNullOrWhiteSpace(keyword))
-            {
-                return BadRequest("Keyword cannot be empty.");
-            }
+		public async Task<ActionResult<IEnumerable<KhachHangDto>>> Search(string keyword)
+		{
+			if (string.IsNullOrWhiteSpace(keyword))
+			{
+				return BadRequest("Keyword cannot be empty.");
+			}
 
-            var searchResults = await _context.KhachHangs
-                                              .Include(kh => kh.MaLoaiNavigation)
-                                              .Include(kh => kh.PhieuXuatHangs)
-                                              .Where(kh => kh.TenKhachHang.Contains(keyword))
-                                              .ToListAsync();
+			var searchResults = await _context.KhachHangs
+											  .Include(kh => kh.MaLoaiNavigation)
+											  .Where(kh => kh.TenKhachHang.Contains(keyword))
+											  .Select(kh => new KhachHangDto
+											  {
+												  MaKhachHang = kh.MaKhachHang,
+												  TenKhachHang = kh.TenKhachHang,
+												  MaLoai = kh.MaLoai,
+												  TenLoaiKhachHang = kh.MaLoaiNavigation.TenLoai
+											  })
+											  .ToListAsync();
 
-            return Ok(searchResults);
-        }
+			return Ok(searchResults);
+		}
 
-    }
+	}
 }

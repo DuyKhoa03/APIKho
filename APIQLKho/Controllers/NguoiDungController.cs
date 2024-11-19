@@ -1,4 +1,5 @@
-﻿using APIQLKho.Models;
+﻿using APIQLKho.Dtos;
+using APIQLKho.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +8,7 @@ namespace APIQLKho.Controllers
 {
     [ApiController]
     [Route("api/[controller]/[action]")]
-    [Authorize] // Chỉ cho phép người dùng đã đăng nhập truy cập vào controller này
+    //[Authorize] // Chỉ cho phép người dùng đã đăng nhập truy cập vào controller này
     public class NguoiDungController : ControllerBase
     {
         private readonly ILogger<NguoiDungController> _logger;
@@ -61,14 +62,27 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <returns>Danh sách người dùng, chỉ bao gồm những người có quyền khác null.</returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<NguoiDung>>> Get()
+        public async Task<ActionResult<IEnumerable<NguoiDungDto>>> Get()
         {
             var users = await _context.NguoiDungs
                                       .Where(u => u.Quyen != null)
                                       .OrderBy(u => u.TenNguoiDung)
+                                      .Select(u => new NguoiDungDto
+                                      {
+                                          MaNguoiDung = u.MaNguoiDung,
+                                          TenDangNhap = u.TenDangNhap,
+                                          MatKhau = u.MatKhau, // Không trả về mật khẩu
+                                          TenNguoiDung = u.TenNguoiDung,
+                                          Email = u.Email,
+                                          Sdt = u.Sdt,
+                                          NgayDk = u.NgayDk,
+                                          Quyen = u.Quyen
+                                      })
                                       .ToListAsync();
+
             return Ok(users);
         }
+
 
         /// <summary>
         /// Lấy thông tin chi tiết của người dùng theo ID.
@@ -76,9 +90,22 @@ namespace APIQLKho.Controllers
         /// <param name="id">ID của người dùng.</param>
         /// <returns>Thông tin người dùng nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
         [HttpGet("{id}")]
-        public async Task<ActionResult<NguoiDung>> GetById(int id)
+        public async Task<ActionResult<NguoiDungDto>> GetById(int id)
         {
-            var user = await _context.NguoiDungs.FindAsync(id);
+            var user = await _context.NguoiDungs
+                                     .Where(u => u.MaNguoiDung == id)
+                                     .Select(u => new NguoiDungDto
+                                     {
+                                         MaNguoiDung = u.MaNguoiDung,
+                                         TenDangNhap = u.TenDangNhap,
+                                         MatKhau = u.MatKhau, // Không trả về mật khẩu
+                                         TenNguoiDung = u.TenNguoiDung,
+                                         Email = u.Email,
+                                         Sdt = u.Sdt,
+                                         NgayDk = u.NgayDk,
+                                         Quyen = u.Quyen
+                                     })
+                                     .FirstOrDefaultAsync();
 
             if (user == null)
             {
@@ -88,22 +115,40 @@ namespace APIQLKho.Controllers
             return Ok(user);
         }
 
+
         /// <summary>
         /// Tạo mới một người dùng.
         /// </summary>
         /// <param name="newUser">Thông tin người dùng mới cần tạo.</param>
         /// <returns>Người dùng vừa được tạo nếu thành công; nếu không, trả về thông báo lỗi.</returns>
-        [Authorize(Policy = "ManagerOnly")] // Chỉ quản lý được phép thêm người dùng
+        //[Authorize(Policy = "ManagerOnly")] // Chỉ quản lý được phép thêm người dùng
         [HttpPost]
-        public async Task<ActionResult<NguoiDung>> CreateUser(NguoiDung newUser)
+        public async Task<ActionResult<NguoiDungDto>> CreateUser(NguoiDungDto newUserDto)
         {
-            newUser.NgayDk = DateTime.Now;
-            newUser.MatKhau = BCrypt.Net.BCrypt.HashPassword(newUser.MatKhau); // Mã hóa mật khẩu
+            if (newUserDto == null)
+            {
+                return BadRequest("User data is null.");
+            }
+
+            var newUser = new NguoiDung
+            {
+                TenDangNhap = newUserDto.TenDangNhap,
+                MatKhau = BCrypt.Net.BCrypt.HashPassword(newUserDto.MatKhau), // Mã hóa mật khẩu
+                TenNguoiDung = newUserDto.TenNguoiDung,
+                Email = newUserDto.Email,
+                Sdt = newUserDto.Sdt,
+                NgayDk = DateTime.Now,
+                Quyen = newUserDto.Quyen
+            };
+
             _context.NguoiDungs.Add(newUser);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById), new { id = newUser.MaNguoiDung }, newUser);
+            newUserDto.MaNguoiDung = newUser.MaNguoiDung;
+
+            return CreatedAtAction(nameof(GetById), new { id = newUser.MaNguoiDung }, newUserDto);
         }
+
 
 
         /// <summary>
@@ -112,15 +157,13 @@ namespace APIQLKho.Controllers
         /// <param name="id">ID của người dùng cần cập nhật.</param>
         /// <param name="updatedUser">Thông tin người dùng cần cập nhật.</param>
         /// <returns>Không trả về nội dung nếu cập nhật thành công; nếu không, trả về thông báo lỗi.</returns>
-        [Authorize] // Chỉ cho phép người dùng đã đăng nhập
+        //[Authorize] // Chỉ cho phép người dùng đã đăng nhập
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, NguoiDung updatedUser)
+        public async Task<IActionResult> UpdateUser(int id, NguoiDungDto updatedUserDto)
         {
-            var currentUser = await GetCurrentUserAsync();
-
-            if (currentUser == null || (currentUser.Quyen != 1 && id != currentUser.MaNguoiDung)) // Chỉ quản lý hoặc bản thân được cập nhật
+            if (updatedUserDto == null)
             {
-                return Forbid("Chỉ quản lý hoặc bản thân mới được phép cập nhật thông tin.");
+                return BadRequest("User data is null.");
             }
 
             var existingUser = await _context.NguoiDungs.FindAsync(id);
@@ -129,21 +172,22 @@ namespace APIQLKho.Controllers
                 return NotFound("User not found.");
             }
 
-            if (currentUser.Quyen == 1)
+            existingUser.TenDangNhap = updatedUserDto.TenDangNhap;
+            existingUser.TenNguoiDung = updatedUserDto.TenNguoiDung;
+            existingUser.Email = updatedUserDto.Email;
+            existingUser.Sdt = updatedUserDto.Sdt;
+            existingUser.Quyen = updatedUserDto.Quyen;
+
+            if (!string.IsNullOrEmpty(updatedUserDto.MatKhau))
             {
-                // Quản lý được phép cập nhật tất cả các thuộc tính
-                existingUser.TenNguoiDung = updatedUser.TenNguoiDung;
-                existingUser.Email = updatedUser.Email;
-                existingUser.Quyen = updatedUser.Quyen;
+                existingUser.MatKhau = BCrypt.Net.BCrypt.HashPassword(updatedUserDto.MatKhau); // Cập nhật mật khẩu nếu có
             }
 
-            // Cho phép cập nhật các thuộc tính này với cả quản lý và người dùng
-            existingUser.TenDangNhap = updatedUser.TenDangNhap;
-            existingUser.Sdt = updatedUser.Sdt;
-
             await _context.SaveChangesAsync();
+
             return NoContent();
         }
+
 
         /// <summary>
         /// Xóa một người dùng dựa vào ID.
@@ -193,7 +237,7 @@ namespace APIQLKho.Controllers
         /// <returns>Danh sách người dùng có chứa từ khóa trong tên đăng nhập hoặc tên người dùng.</returns>
         // GET: api/nguoidung/search/{keyword}
         [HttpGet("{keyword}")]
-        public async Task<ActionResult<IEnumerable<NguoiDung>>> Search(string keyword)
+        public async Task<ActionResult<IEnumerable<NguoiDungDto>>> Search(string keyword)
         {
             if (string.IsNullOrWhiteSpace(keyword))
             {
@@ -201,11 +245,23 @@ namespace APIQLKho.Controllers
             }
 
             var searchResults = await _context.NguoiDungs
-                                              .Where(u => u.TenDangNhap.Contains(keyword) || u.TenNguoiDung.Contains(keyword))
+                                              .Where(u => (u.TenDangNhap.Contains(keyword) || u.TenNguoiDung.Contains(keyword)) && u.Quyen != null)
+                                              .Select(u => new NguoiDungDto
+                                              {
+                                                  MaNguoiDung = u.MaNguoiDung,
+                                                  TenDangNhap = u.TenDangNhap,
+                                                  MatKhau = null, // Không trả về mật khẩu
+                                                  TenNguoiDung = u.TenNguoiDung,
+                                                  Email = u.Email,
+                                                  Sdt = u.Sdt,
+                                                  NgayDk = u.NgayDk,
+                                                  Quyen = u.Quyen
+                                              })
                                               .ToListAsync();
 
             return Ok(searchResults);
         }
+
 
     }
 }

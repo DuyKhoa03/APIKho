@@ -79,22 +79,10 @@ namespace APIQLKho.Controllers
         /// <param name="newEmployee">Thông tin của nhân viên kho mới cần thêm.</param>
         /// <returns>Nhân viên kho vừa được tạo nếu thành công; nếu không, trả về thông báo lỗi.</returns>
         // POST: api/nhanvienkho
-        [HttpPost]
-        public async Task<ActionResult<NhanVienKho>> CreateWarehouseEmployee(NhanVienKho newEmployee)
-        {
-            if (newEmployee == null)
-            {
-                return BadRequest("Warehouse employee data is null.");
-            }
-
-            _context.NhanVienKhos.Add(newEmployee);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = newEmployee.MaNhanVienKho }, newEmployee);
-        }
+       
         [HttpPost]
         [Route("uploadfile")]
-        public async Task<ActionResult<NhanVienKho>> CreateWarehouseEmployeeWithImage([FromForm] NhanVienKhoDto newEmployeeDto)
+        public async Task<ActionResult<NhanVienKho>> Create([FromForm] NhanVienKhoDto newEmployeeDto)
         {
             if (newEmployeeDto == null)
             {
@@ -138,11 +126,11 @@ namespace APIQLKho.Controllers
         /// Cập nhật thông tin của một nhân viên kho dựa vào ID.
         /// </summary>
         /// <param name="id">ID của nhân viên kho cần cập nhật.</param>
-        /// <param name="updatedEmployee">Thông tin nhân viên kho cần cập nhật.</param>
+        /// <param name="updatedEmployeeDto">Thông tin nhân viên kho cần cập nhật từ DTO.</param>
         /// <returns>Không trả về nội dung nếu cập nhật thành công; nếu không, trả về thông báo lỗi.</returns>
-        // PUT: api/nhanvienkho/{id}
+        /// PUT: api/nhanvienkho/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateWarehouseEmployee(int id, NhanVienKho updatedEmployee)
+        public async Task<IActionResult> Update(int id, [FromForm] NhanVienKhoDto updatedEmployeeDto)
         {
             var existingEmployee = await _context.NhanVienKhos.FindAsync(id);
             if (existingEmployee == null)
@@ -150,12 +138,25 @@ namespace APIQLKho.Controllers
                 return NotFound("Warehouse employee not found.");
             }
 
-            // Cập nhật các thuộc tính của nhân viên kho
-            existingEmployee.TenNhanVien = updatedEmployee.TenNhanVien;
-            existingEmployee.Email = updatedEmployee.Email;
-            existingEmployee.Sdt = updatedEmployee.Sdt;
-            existingEmployee.Hinhanh = updatedEmployee.Hinhanh;
-            existingEmployee.NamSinh = updatedEmployee.NamSinh;
+            // Cập nhật các thuộc tính của nhân viên kho từ DTO
+            existingEmployee.TenNhanVien = updatedEmployeeDto.TenNhanVien;
+            existingEmployee.Email = updatedEmployeeDto.Email;
+            existingEmployee.Sdt = updatedEmployeeDto.Sdt;
+            existingEmployee.NamSinh = updatedEmployeeDto.NamSinh;
+
+            // Xử lý ảnh tải lên (nếu có)
+            if (updatedEmployeeDto.Img != null && updatedEmployeeDto.Img.Length > 0)
+            {
+                var fileName = Path.GetFileName(updatedEmployeeDto.Img.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await updatedEmployeeDto.Img.CopyToAsync(stream);
+                }
+
+                existingEmployee.Hinhanh = "/UploadedImages/" + fileName;
+            }
 
             try
             {
@@ -176,6 +177,7 @@ namespace APIQLKho.Controllers
             return NoContent();
         }
 
+
         /// <summary>
         /// Xóa một nhân viên kho dựa vào ID.
         /// </summary>
@@ -183,12 +185,22 @@ namespace APIQLKho.Controllers
         /// <returns>Không trả về nội dung nếu xóa thành công; nếu không, trả về thông báo lỗi.</returns>
         // DELETE: api/nhanvienkho/{id}
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteWarehouseEmployee(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             var employee = await _context.NhanVienKhos.FindAsync(id);
             if (employee == null)
             {
                 return NotFound("Warehouse employee not found.");
+            }
+
+            // Xóa file ảnh nếu có
+            if (!string.IsNullOrEmpty(employee.Hinhanh))
+            {
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", Path.GetFileName(employee.Hinhanh));
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                }
             }
 
             // Xóa nhân viên kho khỏi cơ sở dữ liệu

@@ -27,6 +27,7 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<IEnumerable<PhieuXuatHangDto>>> Get()
         {
             var exportOrders = await _context.PhieuXuatHangs
+                                             .Where(px => px.Hide == false || px.Hide == null)  // Chỉ lấy phiếu xuất hàng không bị ẩn
                                              .Include(px => px.MaNguoiDungNavigation)
                                              .Include(px => px.MaKhachHangNavigation)
                                              .Select(px => new PhieuXuatHangDto
@@ -46,6 +47,7 @@ namespace APIQLKho.Controllers
             return Ok(exportOrders);
         }
 
+
         /// <summary>
         /// Lấy thông tin chi tiết của một phiếu xuất hàng dựa vào ID.
         /// </summary>
@@ -56,9 +58,9 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<PhieuXuatHangDto>> GetById(int id)
         {
             var exportOrder = await _context.PhieuXuatHangs
+                                            .Where(px => px.MaPhieuXuatHang == id && (px.Hide == false || px.Hide == null))  // Chỉ lấy phiếu xuất hàng không bị ẩn
                                             .Include(px => px.MaNguoiDungNavigation)
                                             .Include(px => px.MaKhachHangNavigation)
-                                            .Where(px => px.MaPhieuXuatHang == id)
                                             .Select(px => new PhieuXuatHangDto
                                             {
                                                 MaPhieuXuatHang = px.MaPhieuXuatHang,
@@ -81,6 +83,7 @@ namespace APIQLKho.Controllers
             return Ok(exportOrder);
         }
 
+
         /// <summary>
         /// Thêm mới một phiếu xuất hàng vào cơ sở dữ liệu.
         /// </summary>
@@ -102,7 +105,8 @@ namespace APIQLKho.Controllers
                 NgayXuat = newExportOrderDto.NgayXuat,
                 HinhThucThanhToan = newExportOrderDto.HinhThucThanhToan,
                 PhiVanChuyen = newExportOrderDto.PhiVanChuyen,
-                TrangThai = newExportOrderDto.TrangThai
+                TrangThai = newExportOrderDto.TrangThai,
+                Hide = false
             };
 
             _context.PhieuXuatHangs.Add(newExportOrder);
@@ -174,12 +178,28 @@ namespace APIQLKho.Controllers
                 return NotFound("Export order not found.");
             }
 
-            // Xóa phiếu xuất hàng khỏi cơ sở dữ liệu
-            _context.PhieuXuatHangs.Remove(exportOrder);
-            await _context.SaveChangesAsync();
+            // Cập nhật trường Hide thành true thay vì xóa phiếu xuất hàng
+            exportOrder.Hide = true;
+
+            try
+            {
+                await _context.SaveChangesAsync();  // Lưu thay đổi vào cơ sở dữ liệu
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.PhieuXuatHangs.AnyAsync(px => px.MaPhieuXuatHang == id))
+                {
+                    return NotFound("Export order not found.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             return NoContent();
         }
+
         /// <summary>
         /// Tìm kiếm các phiếu xuất hàng dựa trên từ khóa.
         /// </summary>
@@ -195,6 +215,7 @@ namespace APIQLKho.Controllers
             }
 
             var searchResults = await _context.PhieuXuatHangs
+                .Where(px => px.Hide == false || px.Hide == null)
                                               .Include(px => px.MaKhachHangNavigation)
                                               .Include(px => px.MaNguoiDungNavigation)
                                               .Include(px => px.ChiTietPhieuXuatHangs)

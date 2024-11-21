@@ -27,6 +27,7 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<IEnumerable<PhieuNhapHangDto>>> Get()
         {
             var importOrders = await _context.PhieuNhapHangs
+                                             .Where(pn => pn.Hide == false || pn.Hide == null)  // Chỉ lấy phiếu nhập hàng không bị ẩn
                                              .Include(pn => pn.MaNguoiDungNavigation)
                                              .Include(pn => pn.MaNhaCungCapNavigation)
                                              .Select(pn => new PhieuNhapHangDto
@@ -45,6 +46,7 @@ namespace APIQLKho.Controllers
             return Ok(importOrders);
         }
 
+
         /// <summary>
         /// Lấy thông tin chi tiết của một phiếu nhập hàng dựa vào ID.
         /// </summary>
@@ -55,9 +57,9 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<PhieuNhapHangDto>> GetById(int id)
         {
             var importOrder = await _context.PhieuNhapHangs
+                                            .Where(pn => pn.MaPhieuNhapHang == id && (pn.Hide == false || pn.Hide == null))  // Chỉ lấy phiếu nhập hàng không bị ẩn
                                             .Include(pn => pn.MaNguoiDungNavigation)
                                             .Include(pn => pn.MaNhaCungCapNavigation)
-                                            .Where(pn => pn.MaPhieuNhapHang == id)
                                             .Select(pn => new PhieuNhapHangDto
                                             {
                                                 MaPhieuNhapHang = pn.MaPhieuNhapHang,
@@ -79,6 +81,7 @@ namespace APIQLKho.Controllers
             return Ok(importOrder);
         }
 
+
         /// <summary>
         /// Thêm mới một phiếu nhập hàng vào cơ sở dữ liệu.
         /// </summary>
@@ -99,7 +102,8 @@ namespace APIQLKho.Controllers
                 MaNhaCungCap = newImportOrderDto.MaNhaCungCap,
                 NgayNhap = newImportOrderDto.NgayNhap,
                 PhiVanChuyen = newImportOrderDto.PhiVanChuyen,
-                TrangThai = newImportOrderDto.TrangThai
+                TrangThai = newImportOrderDto.TrangThai,
+                Hide = false
             };
 
             _context.PhieuNhapHangs.Add(newImportOrder);
@@ -170,12 +174,28 @@ namespace APIQLKho.Controllers
                 return NotFound("Import order not found.");
             }
 
-            // Xóa phiếu nhập hàng khỏi cơ sở dữ liệu
-            _context.PhieuNhapHangs.Remove(importOrder);
-            await _context.SaveChangesAsync();
+            // Cập nhật trường Hide thành true thay vì xóa phiếu nhập hàng
+            importOrder.Hide = true;
+
+            try
+            {
+                await _context.SaveChangesAsync();  // Lưu thay đổi vào cơ sở dữ liệu
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.PhieuNhapHangs.AnyAsync(pn => pn.MaPhieuNhapHang == id))
+                {
+                    return NotFound("Import order not found.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             return NoContent();
         }
+
         /// <summary>
         /// Tìm kiếm các phiếu nhập hàng dựa trên từ khóa.
         /// </summary>
@@ -191,6 +211,7 @@ namespace APIQLKho.Controllers
             }
 
             var searchResults = await _context.PhieuNhapHangs
+                .Where(pn => pn.Hide == false || pn.Hide == null)
                                               .Include(pn => pn.MaNguoiDungNavigation)
                                               .Include(pn => pn.MaNhaCungCapNavigation)
                                               .Include(pn => pn.ChiTietPhieuNhapHangs)

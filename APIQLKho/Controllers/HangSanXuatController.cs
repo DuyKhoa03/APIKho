@@ -25,6 +25,7 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<IEnumerable<HangSanXuat>>> Get()
         {
             var manufacturers = await _context.HangSanXuats
+                .Where(hsx => hsx.Hide == false || hsx.Hide == null)
                                               .Include(hsx => hsx.SanPhams)
                                               .ToListAsync();
             return Ok(manufacturers);
@@ -39,6 +40,7 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<HangSanXuat>> GetById(int id)
         {
             var manufacturer = await _context.HangSanXuats
+                .Where(hsx => hsx.MaHangSanXuat == id && (hsx.Hide == false || hsx.Hide == null))
                                              .Include(hsx => hsx.SanPhams)
                                              .FirstOrDefaultAsync(hsx => hsx.MaHangSanXuat == id);
 
@@ -120,12 +122,28 @@ namespace APIQLKho.Controllers
                 return NotFound("Manufacturer not found.");
             }
 
-            // Xóa hãng sản xuất
-            _context.HangSanXuats.Remove(manufacturer);
-            await _context.SaveChangesAsync();
+            // Cập nhật trường Hide thành true thay vì xóa hãng sản xuất
+            manufacturer.Hide = true;
+
+            try
+            {
+                await _context.SaveChangesAsync();  // Lưu thay đổi vào cơ sở dữ liệu
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.HangSanXuats.AnyAsync(hsx => hsx.MaHangSanXuat == id))
+                {
+                    return NotFound("Manufacturer not found.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             return NoContent();
         }
+
         /// <summary>
         /// Tìm kiếm các hãng sản xuất dựa trên từ khóa.
         /// </summary>

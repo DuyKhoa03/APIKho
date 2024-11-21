@@ -25,6 +25,7 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<IEnumerable<LoaiSanPham>>> Get()
         {
             var productTypes = await _context.LoaiSanPhams
+                .Where(ls => ls.Hide == false || ls.Hide == null)
                                              .Include(ls => ls.SanPhams)
                                              .ToListAsync();
             return Ok(productTypes);
@@ -39,6 +40,7 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<LoaiSanPham>> GetById(int id)
         {
             var productType = await _context.LoaiSanPhams
+                .Where(ls => ls.MaLoaiSanPham == id && (ls.Hide == false || ls.Hide == null))
                                             .Include(ls => ls.SanPhams)
                                             .FirstOrDefaultAsync(ls => ls.MaLoaiSanPham == id);
 
@@ -120,12 +122,28 @@ namespace APIQLKho.Controllers
                 return NotFound("Product type not found.");
             }
 
-            // Xóa loại sản phẩm
-            _context.LoaiSanPhams.Remove(productType);
-            await _context.SaveChangesAsync();
+            // Cập nhật trường Hide thành true thay vì xóa loại sản phẩm
+            productType.Hide = true;
+
+            try
+            {
+                await _context.SaveChangesAsync();  // Lưu thay đổi vào cơ sở dữ liệu
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.LoaiSanPhams.AnyAsync(ls => ls.MaLoaiSanPham == id))
+                {
+                    return NotFound("Product type not found.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             return NoContent();
         }
+
         /// <summary>
         /// Tìm kiếm loại sản phẩm dựa trên từ khóa trong tên loại sản phẩm.
         /// </summary>

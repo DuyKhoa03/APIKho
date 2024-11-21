@@ -9,6 +9,9 @@
         public decimal? DonGia { get; set; }
         public string? XuatXu { get; set; }
         public string? Image { get; set; }
+        public string? MaVach { get; set; }
+
+        public bool? Hide { get; set; }
 
         // Thông tin cơ bản về loại sản phẩm và hãng sản xuất
         public int MaLoaiSanPham { get; set; }

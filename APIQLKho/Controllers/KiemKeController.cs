@@ -26,6 +26,7 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<IEnumerable<KiemKeDto>>> Get()
         {
             var inventoryChecks = await _context.KiemKes
+                                                .Where(k => k.Hide == false || k.Hide == null)  // Chỉ lấy phiếu kiểm kê không bị ẩn
                                                 .Include(k => k.MaNhanVienKhoNavigation)
                                                 .Select(k => new KiemKeDto
                                                 {
@@ -39,6 +40,7 @@ namespace APIQLKho.Controllers
             return Ok(inventoryChecks);
         }
 
+
         /// <summary>
         /// Lấy thông tin chi tiết của một phiếu kiểm kê dựa vào ID.
         /// </summary>
@@ -48,8 +50,8 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<KiemKeDto>> GetById(int id)
         {
             var inventoryCheck = await _context.KiemKes
+                                               .Where(k => k.MaKiemKe == id && (k.Hide == false || k.Hide == null))  // Chỉ lấy phiếu kiểm kê không bị ẩn
                                                .Include(k => k.MaNhanVienKhoNavigation)
-                                               .Where(k => k.MaKiemKe == id)
                                                .Select(k => new KiemKeDto
                                                {
                                                    MaKiemKe = k.MaKiemKe,
@@ -67,6 +69,7 @@ namespace APIQLKho.Controllers
             return Ok(inventoryCheck);
         }
 
+
         /// <summary>
         /// Tạo mới một phiếu kiểm kê.
         /// </summary>
@@ -83,7 +86,9 @@ namespace APIQLKho.Controllers
             var newInventoryCheck = new KiemKe
             {
                 MaNhanVienKho = newInventoryCheckDto.MaNhanVienKho,
-                NgayKiemKe = newInventoryCheckDto.NgayKiemKe
+                NgayKiemKe = newInventoryCheckDto.NgayKiemKe,
+                Hide = false
+                
             };
 
             _context.KiemKes.Add(newInventoryCheck);
@@ -149,12 +154,28 @@ namespace APIQLKho.Controllers
                 return NotFound("Inventory check not found.");
             }
 
-            // Xóa kiểm kê
-            _context.KiemKes.Remove(inventoryCheck);
-            await _context.SaveChangesAsync();
+            // Cập nhật trường Hide thành true thay vì xóa
+            inventoryCheck.Hide = true;
+
+            try
+            {
+                await _context.SaveChangesAsync();  // Lưu thay đổi vào cơ sở dữ liệu
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.KiemKes.AnyAsync(k => k.MaKiemKe == id))
+                {
+                    return NotFound("Inventory check not found.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             return NoContent();
         }
+
         /// <summary>
         /// Tìm kiếm các phiếu kiểm kê dựa trên từ khóa.
         /// </summary>

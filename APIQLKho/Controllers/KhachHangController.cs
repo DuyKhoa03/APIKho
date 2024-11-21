@@ -26,11 +26,15 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<IEnumerable<KhachHangDto>>> Get()
         {
             var customers = await _context.KhachHangs
+                                          .Where(kh => kh.Hide == false || kh.Hide == null)  // Chỉ lấy khách hàng không bị ẩn
                                           .Include(kh => kh.MaLoaiNavigation)
                                           .Select(kh => new KhachHangDto
                                           {
                                               MaKhachHang = kh.MaKhachHang,
                                               TenKhachHang = kh.TenKhachHang,
+                                              SoDt = kh.SoDt,
+                                              Diachi = kh.Diachi,
+                                              Email = kh.Email,
                                               MaLoai = kh.MaLoai,
                                               TenLoaiKhachHang = kh.MaLoaiNavigation.TenLoai
                                           })
@@ -38,6 +42,7 @@ namespace APIQLKho.Controllers
 
             return Ok(customers);
         }
+
 
         /// <summary>
         /// Lấy thông tin chi tiết của một khách hàng dựa vào ID.
@@ -48,12 +53,15 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<KhachHangDto>> GetById(int id)
         {
             var customer = await _context.KhachHangs
+                                         .Where(kh => kh.MaKhachHang == id && (kh.Hide == false || kh.Hide == null))  // Chỉ lấy khách hàng không bị ẩn
                                          .Include(kh => kh.MaLoaiNavigation)
-                                         .Where(kh => kh.MaKhachHang == id)
                                          .Select(kh => new KhachHangDto
                                          {
                                              MaKhachHang = kh.MaKhachHang,
                                              TenKhachHang = kh.TenKhachHang,
+                                             SoDt = kh.SoDt,
+                                             Diachi = kh.Diachi,
+                                             Email = kh.Email,
                                              MaLoai = kh.MaLoai,
                                              TenLoaiKhachHang = kh.MaLoaiNavigation.TenLoai
                                          })
@@ -66,6 +74,7 @@ namespace APIQLKho.Controllers
 
             return Ok(customer);
         }
+
 
         /// <summary>
         /// Tạo mới một khách hàng.
@@ -83,7 +92,11 @@ namespace APIQLKho.Controllers
             var newCustomer = new KhachHang
             {
                 TenKhachHang = newCustomerDto.TenKhachHang,
-                MaLoai = newCustomerDto.MaLoai
+                SoDt = newCustomerDto.SoDt,
+                Diachi = newCustomerDto.Diachi,
+                Email = newCustomerDto.Email,
+                MaLoai = newCustomerDto.MaLoai,
+                Hide = false
             };
 
             _context.KhachHangs.Add(newCustomer);
@@ -149,12 +162,28 @@ namespace APIQLKho.Controllers
                 return NotFound("Customer not found.");
             }
 
-            // Xóa khách hàng
-            _context.KhachHangs.Remove(customer);
-            await _context.SaveChangesAsync();
+            // Cập nhật trường Hide thành true thay vì xóa
+            customer.Hide = true;
+
+            try
+            {
+                await _context.SaveChangesAsync();  // Lưu thay đổi vào cơ sở dữ liệu
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.KhachHangs.AnyAsync(kh => kh.MaKhachHang == id))
+                {
+                    return NotFound("Customer not found.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             return NoContent();
         }
+
         /// <summary>
         /// Tìm kiếm khách hàng theo tên.
         /// </summary>

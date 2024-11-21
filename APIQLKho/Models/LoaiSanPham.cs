@@ -9,5 +9,7 @@ public partial class LoaiSanPham
 
     public string? TenLoaiSanPham { get; set; }
 
+    public bool? Hide { get; set; }
+
     public virtual ICollection<SanPham> SanPhams { get; set; } = new List<SanPham>();
 }

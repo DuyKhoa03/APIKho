@@ -27,6 +27,7 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<IEnumerable<NhanVienKhoDto>>> Get()
         {
             var warehouseEmployees = await _context.NhanVienKhos
+                                                   .Where(nv => nv.Hide == false || nv.Hide == null)  // Chỉ lấy nhân viên kho không bị ẩn
                                                    .Include(nv => nv.KiemKes) // Bao gồm thông tin kiểm kê
                                                    .Select(nv => new NhanVienKhoDto
                                                    {
@@ -42,6 +43,7 @@ namespace APIQLKho.Controllers
             return Ok(warehouseEmployees);
         }
 
+
         /// <summary>
         /// Lấy thông tin chi tiết của một nhân viên kho dựa vào ID.
         /// </summary>
@@ -52,8 +54,8 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<NhanVienKhoDto>> GetById(int id)
         {
             var warehouseEmployee = await _context.NhanVienKhos
+                                                  .Where(nv => nv.MaNhanVienKho == id && (nv.Hide == false || nv.Hide == null))  // Chỉ lấy nhân viên kho không bị ẩn
                                                   .Include(nv => nv.KiemKes) // Bao gồm thông tin kiểm kê
-                                                  .Where(nv => nv.MaNhanVienKho == id)
                                                   .Select(nv => new NhanVienKhoDto
                                                   {
                                                       MaNhanVienKho = nv.MaNhanVienKho,
@@ -73,13 +75,14 @@ namespace APIQLKho.Controllers
             return Ok(warehouseEmployee);
         }
 
+
         /// <summary>
         /// Thêm mới một nhân viên kho vào cơ sở dữ liệu.
         /// </summary>
         /// <param name="newEmployee">Thông tin của nhân viên kho mới cần thêm.</param>
         /// <returns>Nhân viên kho vừa được tạo nếu thành công; nếu không, trả về thông báo lỗi.</returns>
         // POST: api/nhanvienkho
-       
+
         [HttpPost]
         [Route("uploadfile")]
         public async Task<ActionResult<NhanVienKho>> Create([FromForm] NhanVienKhoDto newEmployeeDto)
@@ -94,7 +97,8 @@ namespace APIQLKho.Controllers
                 TenNhanVien = newEmployeeDto.TenNhanVien,
                 Email = newEmployeeDto.Email,
                 Sdt = newEmployeeDto.Sdt,
-                NamSinh = newEmployeeDto.NamSinh
+                NamSinh = newEmployeeDto.NamSinh,
+                Hide = false
             };
 
             // Xử lý ảnh tải lên
@@ -193,22 +197,27 @@ namespace APIQLKho.Controllers
                 return NotFound("Warehouse employee not found.");
             }
 
-            // Xóa file ảnh nếu có
-            if (!string.IsNullOrEmpty(employee.Hinhanh))
+            // Cập nhật trường Hide thành true thay vì xóa nhân viên kho
+            employee.Hide = true;
+            try
             {
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", Path.GetFileName(employee.Hinhanh));
-                if (System.IO.File.Exists(filePath))
+                await _context.SaveChangesAsync();  // Lưu thay đổi vào cơ sở dữ liệu
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.NhanVienKhos.AnyAsync(nv => nv.MaNhanVienKho == id))
                 {
-                    System.IO.File.Delete(filePath);
+                    return NotFound("Warehouse employee not found.");
+                }
+                else
+                {
+                    throw;
                 }
             }
 
-            // Xóa nhân viên kho khỏi cơ sở dữ liệu
-            _context.NhanVienKhos.Remove(employee);
-            await _context.SaveChangesAsync();
-
             return NoContent();
         }
+
         /// <summary>
         /// Tìm kiếm các nhân viên kho dựa trên từ khóa trong tên hoặc email.
         /// </summary>
@@ -224,6 +233,7 @@ namespace APIQLKho.Controllers
             }
 
             var searchResults = await _context.NhanVienKhos
+                .Where(nv => nv.Hide == false || nv.Hide == null)
                                               .Include(nv => nv.KiemKes) // Bao gồm thông tin kiểm kê
                                               .Where(nv => nv.TenNhanVien.Contains(keyword) || nv.Email.Contains(keyword))
                                               .ToListAsync();

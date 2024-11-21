@@ -25,6 +25,7 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<IEnumerable<LoaiKhacHang>>> Get()
         {
             var customerTypes = await _context.LoaiKhacHangs
+                .Where(lk => lk.Hide == false || lk.Hide == null)
                                               .Include(lk => lk.KhachHangs)
                                               .ToListAsync();
             return Ok(customerTypes);
@@ -39,6 +40,7 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<LoaiKhacHang>> GetById(int id)
         {
             var customerType = await _context.LoaiKhacHangs
+                .Where(lk => lk.MaLoai == id && (lk.Hide == false || lk.Hide == null))
                                              .Include(lk => lk.KhachHangs)
                                              .FirstOrDefaultAsync(lk => lk.MaLoai == id);
 
@@ -122,12 +124,28 @@ namespace APIQLKho.Controllers
                 return NotFound("Customer type not found.");
             }
 
-            // Xóa loại khách hàng
-            _context.LoaiKhacHangs.Remove(customerType);
-            await _context.SaveChangesAsync();
+            // Cập nhật trường Hide thành true thay vì xóa loại khách hàng
+            customerType.Hide = true;
+
+            try
+            {
+                await _context.SaveChangesAsync();  // Lưu thay đổi vào cơ sở dữ liệu
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.LoaiKhacHangs.AnyAsync(lk => lk.MaLoai == id))
+                {
+                    return NotFound("Customer type not found.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             return NoContent();
         }
+
         /// <summary>
         /// Tìm kiếm loại khách hàng dựa trên từ khóa trong tên loại khách hàng.
         /// </summary>

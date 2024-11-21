@@ -2,6 +2,10 @@
 using APIQLKho.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Drawing.Imaging;
+using System.Drawing;
+using System.Runtime.InteropServices;
+using ZXing;
 
 namespace APIQLKho.Controllers
 {
@@ -27,6 +31,7 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<IEnumerable<SanPhamDto>>> Get()
         {
             var products = await _context.SanPhams
+                                         .Where(sp => sp.Hide == false || sp.Hide == null)  // Chỉ lấy sản phẩm không bị ẩn
                                          .Include(sp => sp.MaLoaiSanPhamNavigation)
                                          .Include(sp => sp.MaHangSanXuatNavigation)
                                          .Select(sp => new SanPhamDto
@@ -38,6 +43,7 @@ namespace APIQLKho.Controllers
                                              DonGia = sp.DonGia,
                                              XuatXu = sp.XuatXu,
                                              Image = sp.Image,
+                                             MaVach = sp.MaVach,
                                              MaLoaiSanPham = sp.MaLoaiSanPham,
                                              TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
                                              MaHangSanXuat = sp.MaHangSanXuat,
@@ -47,6 +53,7 @@ namespace APIQLKho.Controllers
 
             return Ok(products);
         }
+
 
         /// <summary>
         /// Lấy thông tin chi tiết của một sản phẩm dựa vào ID.
@@ -58,9 +65,9 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<SanPhamDto>> GetById(int id)
         {
             var product = await _context.SanPhams
+                                        .Where(sp => sp.MaSanPham == id && (sp.Hide == false || sp.Hide == null))  // Chỉ lấy sản phẩm không bị ẩn
                                         .Include(sp => sp.MaLoaiSanPhamNavigation)
                                         .Include(sp => sp.MaHangSanXuatNavigation)
-                                        .Where(sp => sp.MaSanPham == id)
                                         .Select(sp => new SanPhamDto
                                         {
                                             MaSanPham = sp.MaSanPham,
@@ -70,6 +77,7 @@ namespace APIQLKho.Controllers
                                             DonGia = sp.DonGia,
                                             XuatXu = sp.XuatXu,
                                             Image = sp.Image,
+                                            MaVach = sp.MaVach,
                                             MaLoaiSanPham = sp.MaLoaiSanPham,
                                             TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
                                             MaHangSanXuat = sp.MaHangSanXuat,
@@ -84,15 +92,17 @@ namespace APIQLKho.Controllers
 
             return Ok(product);
         }
+
         [HttpPost]
         [Route("uploadfile")]
-        public async Task<ActionResult<SanPham>> CreateProductWithImage([FromForm] SanPhamDto newProductDto)
+        public async Task<ActionResult<SanPham>> CreateProduct([FromForm] SanPhamDto newProductDto)
         {
             if (newProductDto == null)
             {
                 return BadRequest("Product data is null.");
             }
 
+            // Tạo sản phẩm mới
             var newProduct = new SanPham
             {
                 TenSanPham = newProductDto.TenSanPham,
@@ -101,10 +111,11 @@ namespace APIQLKho.Controllers
                 DonGia = newProductDto.DonGia,
                 XuatXu = newProductDto.XuatXu,
                 MaLoaiSanPham = newProductDto.MaLoaiSanPham,
-                MaHangSanXuat = newProductDto.MaHangSanXuat
+                MaHangSanXuat = newProductDto.MaHangSanXuat,
+                Hide = false
             };
 
-            // Xử lý ảnh tải lên
+            // Xử lý ảnh tải lên (nếu có)
             if (newProductDto.Img != null && newProductDto.Img.Length > 0)
             {
                 var fileName = Path.GetFileName(newProductDto.Img.FileName);
@@ -115,7 +126,6 @@ namespace APIQLKho.Controllers
                     await newProductDto.Img.CopyToAsync(stream);
                 }
 
-                // Giả sử bạn có trường `Image` trong `SanPham` để lưu đường dẫn ảnh
                 newProduct.Image = "/UploadedImages/" + fileName;
             }
             else
@@ -123,11 +133,64 @@ namespace APIQLKho.Controllers
                 newProduct.Image = ""; // Trường hợp không có ảnh
             }
 
+            // Thêm sản phẩm mới vào cơ sở dữ liệu trước để có thể sử dụng MaSanPham
             _context.SanPhams.Add(newProduct);
             await _context.SaveChangesAsync();
 
+            try
+            {
+                // Tạo mã vạch
+                var barcodeWriter = new BarcodeWriterPixelData
+                {
+                    Format = BarcodeFormat.CODE_128,
+                    Options = new ZXing.Common.EncodingOptions
+                    {
+                        Height = 150,
+                        Width = 300,
+                        Margin = 10
+                    }
+                };
+
+                var pixelData = barcodeWriter.Write(newProduct.MaSanPham.ToString());
+
+                // Lưu mã vạch dưới dạng hình ảnh
+                var barcodeFileName = $"barcode_{newProduct.MaSanPham}.png";
+                var barcodeFilePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", barcodeFileName);
+
+                using (var bitmap = new Bitmap(pixelData.Width, pixelData.Height, System.Drawing.Imaging.PixelFormat.Format32bppRgb))
+                {
+                    var bitmapData = bitmap.LockBits(
+                        new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                        ImageLockMode.WriteOnly,
+                        System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+                    try
+                    {
+                        Marshal.Copy(pixelData.Pixels, 0, bitmapData.Scan0, pixelData.Pixels.Length);
+                    }
+                    finally
+                    {
+                        bitmap.UnlockBits(bitmapData);
+                    }
+
+                    // Lưu file hình ảnh mã vạch
+                    bitmap.Save(barcodeFilePath, ImageFormat.Png);
+                }
+
+                // Cập nhật đường dẫn mã vạch vào sản phẩm
+                newProduct.MaVach = "/UploadedImages/" + barcodeFileName;
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi nếu tạo mã vạch thất bại
+                _logger.LogError(ex, "Error generating barcode");
+                throw;
+            }
+
             return CreatedAtAction(nameof(GetById), new { id = newProduct.MaSanPham }, newProduct);
         }
+
+
 
         /// <summary>
         /// Cập nhật thông tin của một sản phẩm dựa vào ID.
@@ -223,12 +286,28 @@ namespace APIQLKho.Controllers
                 return NotFound("Product not found.");
             }
 
-            // Xóa sản phẩm khỏi cơ sở dữ liệu
-            _context.SanPhams.Remove(product);
-            await _context.SaveChangesAsync();
+            // Cập nhật trường Hide thành true thay vì xóa sản phẩm
+            product.Hide = true;
+
+            try
+            {
+                await _context.SaveChangesAsync();  // Lưu thay đổi vào cơ sở dữ liệu
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.SanPhams.AnyAsync(sp => sp.MaSanPham == id))
+                {
+                    return NotFound("Product not found.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             return NoContent();
         }
+
         /// <summary>
         /// Tìm kiếm sản phẩm theo tên hoặc mô tả.
         /// </summary>
@@ -244,12 +323,49 @@ namespace APIQLKho.Controllers
             }
 
             var searchResults = await _context.SanPhams
+                .Where(sp => sp.Hide == false || sp.Hide == null)
                                                .Include(sp => sp.MaLoaiSanPhamNavigation)
                                                .Include(sp => sp.MaHangSanXuatNavigation)
                                                .Where(sp => sp.TenSanPham.Contains(keyword) || sp.Mota.Contains(keyword))
                                                .ToListAsync();
 
             return Ok(searchResults);
+        }
+        [HttpGet("search-by-barcode/{barcode}")]
+        public async Task<ActionResult<SanPhamDto>> GetByBarcode(string barcode)
+        {
+            if (string.IsNullOrWhiteSpace(barcode))
+            {
+                return BadRequest("Barcode is empty.");
+            }
+
+            // Tìm sản phẩm dựa trên mã vạch
+            var product = await _context.SanPhams
+                                        .Where(sp => sp.MaVach == barcode && (sp.Hide == false || sp.Hide == null))
+                                        .Include(sp => sp.MaLoaiSanPhamNavigation)
+                                        .Include(sp => sp.MaHangSanXuatNavigation)
+                                        .Select(sp => new SanPhamDto
+                                        {
+                                            MaSanPham = sp.MaSanPham,
+                                            TenSanPham = sp.TenSanPham,
+                                            Mota = sp.Mota,
+                                            SoLuong = sp.SoLuong,
+                                            DonGia = sp.DonGia,
+                                            XuatXu = sp.XuatXu,
+                                            Image = sp.Image,
+                                            MaLoaiSanPham = sp.MaLoaiSanPham,
+                                            TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
+                                            MaHangSanXuat = sp.MaHangSanXuat,
+                                            TenHangSanXuat = sp.MaHangSanXuatNavigation.TenHangSanXuat
+                                        })
+                                        .FirstOrDefaultAsync();
+
+            if (product == null)
+            {
+                return NotFound("Product not found.");
+            }
+
+            return Ok(product);
         }
 
     }

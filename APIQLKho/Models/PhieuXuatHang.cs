@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 
 namespace APIQLKho.Models;
 
@@ -20,9 +19,11 @@ public partial class PhieuXuatHang
 
     public int? TrangThai { get; set; }
 
+    public bool? Hide { get; set; }
+
     public virtual ICollection<ChiTietPhieuXuatHang> ChiTietPhieuXuatHangs { get; set; } = new List<ChiTietPhieuXuatHang>();
-    [JsonIgnore] // Bỏ qua thuộc tính này khi chuyển đổi từ JSON
+
     public virtual KhachHang MaKhachHangNavigation { get; set; } = null!;
-    [JsonIgnore] // Bỏ qua thuộc tính này khi chuyển đổi từ JSON
+
     public virtual NguoiDung MaNguoiDungNavigation { get; set; } = null!;
 }

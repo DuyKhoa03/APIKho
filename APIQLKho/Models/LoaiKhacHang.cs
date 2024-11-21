@@ -13,5 +13,7 @@ public partial class LoaiKhacHang
 
     public decimal? ChiPhiVanChuyen { get; set; }
 
+    public bool? Hide { get; set; }
+
     public virtual ICollection<KhachHang> KhachHangs { get; set; } = new List<KhachHang>();
 }

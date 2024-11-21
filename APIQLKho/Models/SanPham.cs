@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 
 namespace APIQLKho.Models;
 
@@ -24,6 +23,10 @@ public partial class SanPham
 
     public string? Image { get; set; }
 
+    public string? MaVach { get; set; }
+
+    public bool? Hide { get; set; }
+
     public virtual ICollection<ChiTietKiemKe> ChiTietKiemKes { get; set; } = new List<ChiTietKiemKe>();
 
     public virtual ICollection<ChiTietPhieuNhapHang> ChiTietPhieuNhapHangs { get; set; } = new List<ChiTietPhieuNhapHang>();
@@ -31,8 +34,8 @@ public partial class SanPham
     public virtual ICollection<ChiTietPhieuXuatHang> ChiTietPhieuXuatHangs { get; set; } = new List<ChiTietPhieuXuatHang>();
 
     public virtual ICollection<DoanhThu> DoanhThus { get; set; } = new List<DoanhThu>();
-    [JsonIgnore] // Bỏ qua thuộc tính này khi chuyển đổi từ JSON
+
     public virtual HangSanXuat MaHangSanXuatNavigation { get; set; } = null!;
-    [JsonIgnore] // Bỏ qua thuộc tính này khi chuyển đổi từ JSON
+
     public virtual LoaiSanPham MaLoaiSanPhamNavigation { get; set; } = null!;
 }

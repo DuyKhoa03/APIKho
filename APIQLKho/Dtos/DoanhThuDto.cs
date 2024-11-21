@@ -9,9 +9,9 @@
         public decimal? PhiVanHanh { get; set; }
         public decimal? DoanhThuNgay { get; set; }
         public DateTime? NgayCapNhat { get; set; }
-
+        public bool? Hide { get; set; }
         // Thông tin cơ bản về sản phẩm
-        
+
         public string? TenSanPham { get; set; } // Tên sản phẩm từ SanPham
     }
 

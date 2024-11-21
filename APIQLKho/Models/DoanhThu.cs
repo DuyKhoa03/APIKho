@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 
 namespace APIQLKho.Models;
 
@@ -19,6 +18,8 @@ public partial class DoanhThu
     public decimal? DoanhThuNgay { get; set; }
 
     public DateTime? NgayCapNhat { get; set; }
-    [JsonIgnore] // Bỏ qua thuộc tính này khi chuyển đổi từ JSON
+
+    public bool? Hide { get; set; }
+
     public virtual SanPham MaSanPhamNavigation { get; set; } = null!;
 }

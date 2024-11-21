@@ -26,6 +26,7 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<IEnumerable<DoanhThuDto>>> Get()
         {
             var revenues = await _context.DoanhThus
+                .Where(dt => dt.Hide == false || dt.Hide == null)  // Chỉ lấy các bản ghi chưa bị ẩn
                 .Include(dt => dt.MaSanPhamNavigation)
                 .Select(dt => new DoanhThuDto
                 {
@@ -43,6 +44,7 @@ namespace APIQLKho.Controllers
             return Ok(revenues);
         }
 
+
         /// <summary>
         /// Lấy thông tin chi tiết của một bản ghi doanh thu dựa vào ID.
         /// </summary>
@@ -52,8 +54,8 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<DoanhThuDto>> GetById(int id)
         {
             var revenue = await _context.DoanhThus
+                .Where(dt => dt.MaDoanhThu == id && (dt.Hide == false || dt.Hide == null))  // Chỉ lấy bản ghi chưa bị ẩn
                 .Include(dt => dt.MaSanPhamNavigation)
-                .Where(dt => dt.MaDoanhThu == id)
                 .Select(dt => new DoanhThuDto
                 {
                     MaDoanhThu = dt.MaDoanhThu,
@@ -63,7 +65,8 @@ namespace APIQLKho.Controllers
                     TongPhiXuat = dt.TongPhiXuat,
                     PhiVanHanh = dt.PhiVanHanh,
                     DoanhThuNgay = dt.DoanhThuNgay,
-                    NgayCapNhat = dt.NgayCapNhat
+                    NgayCapNhat = dt.NgayCapNhat,
+                    Hide = false
                 })
                 .FirstOrDefaultAsync();
 
@@ -74,6 +77,7 @@ namespace APIQLKho.Controllers
 
             return Ok(revenue);
         }
+
 
         /// <summary>
         /// Tạo mới một bản ghi doanh thu.
@@ -149,10 +153,10 @@ namespace APIQLKho.Controllers
         }
 
         /// <summary>
-        /// Xóa một bản ghi doanh thu dựa vào ID.
+        /// Ẩn một bản ghi doanh thu thay vì xóa.
         /// </summary>
-        /// <param name="id">ID của bản ghi doanh thu cần xóa.</param>
-        /// <returns>Không trả về nội dung nếu xóa thành công; nếu không, trả về thông báo lỗi.</returns>
+        /// <param name="id">ID của bản ghi doanh thu cần ẩn.</param>
+        /// <returns>Không trả về nội dung nếu ẩn thành công; nếu không, trả về thông báo lỗi.</returns>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRevenue(int id)
         {
@@ -162,12 +166,29 @@ namespace APIQLKho.Controllers
                 return NotFound("Revenue record not found.");
             }
 
-            // Xóa bản ghi doanh thu khỏi cơ sở dữ liệu
-            _context.DoanhThus.Remove(revenue);
-            await _context.SaveChangesAsync();
+            // Cập nhật trường Hide thành true thay vì xóa bản ghi
+            revenue.Hide = true;
+
+            try
+            {
+                // Lưu thay đổi vào cơ sở dữ liệu
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.DoanhThus.AnyAsync(dt => dt.MaDoanhThu == id))
+                {
+                    return NotFound("Revenue record not found.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             return NoContent();
         }
+
 
         /// <summary>
         /// Tính doanh thu ngày từ chi tiết phiếu xuất, phiếu nhập và phí vận hành, và lưu vào cơ sở dữ liệu.

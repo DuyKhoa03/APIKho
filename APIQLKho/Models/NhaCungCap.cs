@@ -13,9 +13,11 @@ public partial class NhaCungCap
 
     public string? Email { get; set; }
 
-    public int? Sdt { get; set; }
+    public string? Sdt { get; set; }
 
     public string? Image { get; set; }
+
+    public bool? Hide { get; set; }
 
     public virtual ICollection<PhieuNhapHang> PhieuNhapHangs { get; set; } = new List<PhieuNhapHang>();
 }

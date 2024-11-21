@@ -6,7 +6,7 @@
         public DateTime? NgayNhap { get; set; }
         public decimal? PhiVanChuyen { get; set; }
         public int? TrangThai { get; set; }
-
+        public bool? Hide { get; set; }
         // Thông tin cơ bản về người dùng và nhà cung cấp
         public int MaNguoiDung { get; set; }
         public string? TenNguoiDung { get; set; } // Tên người dùng từ NguoiDung

@@ -27,7 +27,8 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<IEnumerable<NhaCungCapDto>>> Get()
         {
             var suppliers = await _context.NhaCungCaps
-                                          .Include(ncc => ncc.PhieuNhapHangs) // Bao gồm thông tin phiếu nhập hàng
+                                          .Where(ncc => ncc.Hide == false || ncc.Hide == null)  // Chỉ lấy nhà cung cấp không bị ẩn
+                                          .Include(ncc => ncc.PhieuNhapHangs)  // Bao gồm thông tin phiếu nhập hàng
                                           .Select(ncc => new NhaCungCapDto
                                           {
                                               MaNhaCungCap = ncc.MaNhaCungCap,
@@ -42,6 +43,7 @@ namespace APIQLKho.Controllers
             return Ok(suppliers);
         }
 
+
         /// <summary>
         /// Lấy thông tin chi tiết của một nhà cung cấp dựa vào ID.
         /// </summary>
@@ -52,8 +54,8 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<NhaCungCapDto>> GetById(int id)
         {
             var supplier = await _context.NhaCungCaps
+                                         .Where(ncc => ncc.MaNhaCungCap == id && (ncc.Hide == false || ncc.Hide == null))  // Chỉ lấy nhà cung cấp không bị ẩn
                                          .Include(ncc => ncc.PhieuNhapHangs)
-                                         .Where(ncc => ncc.MaNhaCungCap == id)
                                          .Select(ncc => new NhaCungCapDto
                                          {
                                              MaNhaCungCap = ncc.MaNhaCungCap,
@@ -72,6 +74,7 @@ namespace APIQLKho.Controllers
 
             return Ok(supplier);
         }
+
 
         /// <summary>
         /// Thêm mới một nhà cung cấp vào cơ sở dữ liệu.
@@ -106,7 +109,8 @@ namespace APIQLKho.Controllers
                 TenNhaCungCap = newSupplierDto.TenNhaCungCap,
                 DiaChi = newSupplierDto.DiaChi,
                 Email = newSupplierDto.Email,
-                Sdt = newSupplierDto.Sdt
+                Sdt = newSupplierDto.Sdt,
+                Hide = false
             };
 
             // Xử lý ảnh tải lên
@@ -217,22 +221,27 @@ namespace APIQLKho.Controllers
                 return NotFound("Supplier not found.");
             }
 
-            // Xóa ảnh cũ nếu có
-            if (!string.IsNullOrEmpty(supplier.Image))
+            // Cập nhật trường Hide thành true thay vì xóa
+            supplier.Hide = true;
+            try
             {
-                var imagePath = Path.Combine(Directory.GetCurrentDirectory(), supplier.Image.TrimStart('/'));
-                if (System.IO.File.Exists(imagePath))
+                await _context.SaveChangesAsync();  // Lưu thay đổi vào cơ sở dữ liệu
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.NhaCungCaps.AnyAsync(ncc => ncc.MaNhaCungCap == id))
                 {
-                    System.IO.File.Delete(imagePath);
+                    return NotFound("Supplier not found.");
+                }
+                else
+                {
+                    throw;
                 }
             }
 
-            // Xóa nhà cung cấp khỏi cơ sở dữ liệu
-            _context.NhaCungCaps.Remove(supplier);
-            await _context.SaveChangesAsync();
-
             return NoContent();
         }
+
 
         /// <summary>
         /// Tìm kiếm nhà cung cấp dựa trên từ khóa trong tên hoặc địa chỉ.
@@ -249,6 +258,7 @@ namespace APIQLKho.Controllers
             }
 
             var searchResults = await _context.NhaCungCaps
+                .Where(ncc => ncc.Hide == false || ncc.Hide == null)
                                               .Where(ncc => ncc.TenNhaCungCap.Contains(keyword) || ncc.DiaChi.Contains(keyword))
                                               .ToListAsync();
 

@@ -65,13 +65,13 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<IEnumerable<NguoiDungDto>>> Get()
         {
             var users = await _context.NguoiDungs
-                                      .Where(u => u.Quyen != null)
+                                      .Where(u => (u.Quyen != null) && (u.Hide == false || u.Hide == null))  // Chỉ lấy người dùng không bị ẩn
                                       .OrderBy(u => u.TenNguoiDung)
                                       .Select(u => new NguoiDungDto
                                       {
                                           MaNguoiDung = u.MaNguoiDung,
                                           TenDangNhap = u.TenDangNhap,
-                                          MatKhau = u.MatKhau, // Không trả về mật khẩu
+                                          MatKhau = u.MatKhau,  // Không trả về mật khẩu
                                           TenNguoiDung = u.TenNguoiDung,
                                           Email = u.Email,
                                           Sdt = u.Sdt,
@@ -84,6 +84,7 @@ namespace APIQLKho.Controllers
         }
 
 
+
         /// <summary>
         /// Lấy thông tin chi tiết của người dùng theo ID.
         /// </summary>
@@ -93,7 +94,7 @@ namespace APIQLKho.Controllers
         public async Task<ActionResult<NguoiDungDto>> GetById(int id)
         {
             var user = await _context.NguoiDungs
-                                     .Where(u => u.MaNguoiDung == id)
+                                     .Where(u => u.MaNguoiDung == id && (u.Hide == false || u.Hide == null))  // Chỉ lấy người dùng không bị ẩn
                                      .Select(u => new NguoiDungDto
                                      {
                                          MaNguoiDung = u.MaNguoiDung,
@@ -114,6 +115,7 @@ namespace APIQLKho.Controllers
 
             return Ok(user);
         }
+
 
 
         /// <summary>
@@ -138,7 +140,8 @@ namespace APIQLKho.Controllers
                 Email = newUserDto.Email,
                 Sdt = newUserDto.Sdt,
                 NgayDk = DateTime.Now,
-                Quyen = newUserDto.Quyen
+                Quyen = newUserDto.Quyen,
+                Hide = false
             };
 
             _context.NguoiDungs.Add(newUser);
@@ -198,17 +201,42 @@ namespace APIQLKho.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var user = await _context.NguoiDungs.FindAsync(id);
+            // Tìm người dùng theo mã
+            var user = await _context.NguoiDungs
+                                     .Include(u => u.Blogs)
+                                     .Include(u => u.Menus)
+                                     .Include(u => u.PhieuNhapHangs)
+                                     .Include(u => u.PhieuXuatHangs)
+                                     .FirstOrDefaultAsync(u => u.MaNguoiDung == id);
+
             if (user == null)
             {
                 return NotFound("User not found.");
             }
 
-            _context.NguoiDungs.Remove(user);
-            await _context.SaveChangesAsync();
+            // Cập nhật trường Hide thành true thay vì xóa
+            user.Hide = true;
+
+            try
+            {
+                await _context.SaveChangesAsync();  // Lưu thay đổi vào cơ sở dữ liệu
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.NguoiDungs.AnyAsync(u => u.MaNguoiDung == id))
+                {
+                    return NotFound("User not found.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             return NoContent();
         }
+
+
 
         /// <summary>
         /// Lấy thông tin người dùng hiện tại từ yêu cầu đăng nhập.
@@ -245,7 +273,7 @@ namespace APIQLKho.Controllers
             }
 
             var searchResults = await _context.NguoiDungs
-                                              .Where(u => (u.TenDangNhap.Contains(keyword) || u.TenNguoiDung.Contains(keyword)) && u.Quyen != null)
+                                              .Where(u => (u.TenDangNhap.Contains(keyword) || u.TenNguoiDung.Contains(keyword)) && u.Quyen != null && (u.Hide == false || u.Hide == null))
                                               .Select(u => new NguoiDungDto
                                               {
                                                   MaNguoiDung = u.MaNguoiDung,

@@ -42,43 +42,69 @@ namespace APIQLKho.Controllers
             return Ok(details);
         }
 
-        /// <summary>
-        /// Lấy chi tiết phiếu nhập hàng theo mã phiếu
-        /// </summary>
-        /// <param name="id">Mã phiếu nhập hàng</param>
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ChiTietPhieuNhapHangDto>> GetById(int id)
-        {
-            var detail = await _context.ChiTietPhieuNhapHangs
-                                       .Include(ct => ct.MaSanPhamNavigation)
-                                       .Include(ct => ct.MaPhieuNhapHangNavigation)
-                                       .Where(ct => ct.MaPhieuNhapHang == id)
-                                       .Select(ct => new ChiTietPhieuNhapHangDto
-                                       {
-                                           MaPhieuNhapHang = ct.MaPhieuNhapHang,
-                                           MaSanPham = ct.MaSanPham,
-                                           TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
-                                           SoLuong = ct.SoLuong,
-                                           DonGiaNhap = ct.DonGiaNhap,
-                                           TrangThai = ct.TrangThai,
-                                           Image = ct.Image
-                                       })
-                                       .FirstOrDefaultAsync();
+		/// <summary>
+		/// Lấy chi tiết phiếu nhập hàng theo mã phiếu
+		/// </summary>
+		/// <param name="id">Mã phiếu nhập hàng</param>
+		[HttpGet("{id}")]
+		public async Task<ActionResult<IEnumerable<ChiTietPhieuNhapHangDto>>> GetById(int id)
+		{
+			var details = await _context.ChiTietPhieuNhapHangs
+										.Include(ct => ct.MaSanPhamNavigation)
+										.Include(ct => ct.MaPhieuNhapHangNavigation)
+										.Where(ct => ct.MaPhieuNhapHang == id)
+										.Select(ct => new ChiTietPhieuNhapHangDto
+										{
+											MaPhieuNhapHang = ct.MaPhieuNhapHang,
+											MaSanPham = ct.MaSanPham,
+											TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
+											SoLuong = ct.SoLuong,
+											DonGiaNhap = ct.DonGiaNhap,
+											TrangThai = ct.TrangThai,
+											Image = ct.Image
+										})
+										.ToListAsync();
 
-            if (detail == null)
-            {
-                return NotFound("Detail not found.");
-            }
+			if (!details.Any())
+			{
+				return NotFound("No details found for the specified receipt ID.");
+			}
 
-            return Ok(detail);
-        }
+			return Ok(details);
+		}
+		[HttpGet("{phieuXuatId}/{sanPhamId}")]
+		public async Task<ActionResult<ChiTietPhieuNhapHangDto>> GetDetail(int phieuNhapId, int sanPhamId)
+		{
+			var detail = await _context.ChiTietPhieuNhapHangs
+									   .Include(ct => ct.MaSanPhamNavigation)
+									   .Include(ct => ct.MaPhieuNhapHangNavigation)
+									   .Where(ct => ct.MaPhieuNhapHang == phieuNhapId && ct.MaSanPham == sanPhamId)
+									   .Select(ct => new ChiTietPhieuNhapHangDto
+									   {
+										   MaSanPham = ct.MaSanPham,
+										   TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
+										   MaPhieuNhapHang = ct.MaPhieuNhapHang,
+										   SoLuong = ct.SoLuong,
+										   DonGiaNhap = ct.DonGiaNhap,
+										   TrangThai = ct.TrangThai,
+										   Image = ct.Image
+									   })
+									   .FirstOrDefaultAsync();
 
-        /// <summary>
-        /// Tạo mới một chi tiết phiếu nhập hàng
-        /// </summary>
-        /// <param name="detailDto">Dữ liệu chi tiết phiếu nhập hàng cần tạo</param>
-        
-        [HttpPost]
+			if (detail == null)
+			{
+				return NotFound("Detail not found.");
+			}
+
+			return Ok(detail);
+		}
+
+		/// <summary>
+		/// Tạo mới một chi tiết phiếu nhập hàng
+		/// </summary>
+		/// <param name="detailDto">Dữ liệu chi tiết phiếu nhập hàng cần tạo</param>
+
+		[HttpPost]
         [Route("uploadfile")]
         public async Task<ActionResult<ChiTietPhieuNhapHang>> CreateDetailWithImage([FromForm] ChiTietPhieuNhapHangDto detailDto)
         {

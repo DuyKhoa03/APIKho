@@ -40,40 +40,41 @@ namespace APIQLKho.Controllers
             return Ok(details);
         }
 
-        /// <summary>
-        /// Lấy chi tiết kiểm kê theo mã kiểm kê
-        /// </summary>
-        /// <param name="id">Mã kiểm kê</param>
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ChiTietKiemKeDto>> GetById(int id)
-        {
-            var detail = await _context.ChiTietKiemKes
-                                       .Include(ct => ct.MaSanPhamNavigation)
-                                       .Include(ct => ct.MaKiemKeNavigation)
-                                       .Where(ct => ct.MaKiemKe == id)
-                                       .Select(ct => new ChiTietKiemKeDto
-                                       {
-                                           MaKiemKe = ct.MaKiemKe,
-                                           MaSanPham = ct.MaSanPham,
-                                           TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
-                                           SoLuongTon = ct.SoLuongTon,
-                                           TrangThai = ct.TrangThai
-                                       })
-                                       .FirstOrDefaultAsync();
+		/// <summary>
+		/// Lấy chi tiết kiểm kê theo mã kiểm kê
+		/// </summary>
+		/// <param name="id">Mã kiểm kê</param>
+		[HttpGet("{id}")]
+		public async Task<ActionResult<IEnumerable<ChiTietKiemKeDto>>> GetById(int id)
+		{
+			var details = await _context.ChiTietKiemKes
+										.Include(ct => ct.MaSanPhamNavigation)
+										.Include(ct => ct.MaKiemKeNavigation)
+										.Where(ct => ct.MaKiemKe == id)
+										.Select(ct => new ChiTietKiemKeDto
+										{
+											MaKiemKe = ct.MaKiemKe,
+											MaSanPham = ct.MaSanPham,
+											TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
+											SoLuongTon = ct.SoLuongTon,
+											TrangThai = ct.TrangThai
+										})
+										.ToListAsync();
 
-            if (detail == null)
-            {
-                return NotFound("Detail not found.");
-            }
+			if (!details.Any())
+			{
+				return NotFound("No details found for the specified inventory check ID.");
+			}
 
-            return Ok(detail);
-        }
+			return Ok(details);
+		}
 
-        /// <summary>
-        /// Tạo mới một chi tiết kiểm kê
-        /// </summary>
-        /// <param name="detailDto">Dữ liệu chi tiết kiểm kê cần tạo</param>
-        [HttpPost]
+
+		/// <summary>
+		/// Tạo mới một chi tiết kiểm kê
+		/// </summary>
+		/// <param name="detailDto">Dữ liệu chi tiết kiểm kê cần tạo</param>
+		[HttpPost]
         public async Task<ActionResult<ChiTietKiemKe>> CreateDetail(ChiTietKiemKeDto detailDto)
         {
             if (detailDto == null)

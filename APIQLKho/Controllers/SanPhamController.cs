@@ -22,78 +22,90 @@ namespace APIQLKho.Controllers
             _context = context;
         }
 
-        /// <summary>
-        /// Lấy danh sách tất cả các sản phẩm.
-        /// </summary>
-        /// <returns>Một danh sách các sản phẩm, bao gồm thông tin loại sản phẩm và hãng sản xuất.</returns>
-        // GET: api/sanpham
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<SanPhamDto>>> Get()
-        {
-            var products = await _context.SanPhams
-                                         .Where(sp => sp.Hide == false || sp.Hide == null)  // Chỉ lấy sản phẩm không bị ẩn
-                                         .Include(sp => sp.MaLoaiSanPhamNavigation)
-                                         .Include(sp => sp.MaHangSanXuatNavigation)
-                                         .Select(sp => new SanPhamDto
-                                         {
-                                             MaSanPham = sp.MaSanPham,
-                                             TenSanPham = sp.TenSanPham,
-                                             Mota = sp.Mota,
-                                             SoLuong = sp.SoLuong,
-                                             DonGia = sp.DonGia,
-                                             XuatXu = sp.XuatXu,
-                                             Image = sp.Image,
-                                             MaVach = sp.MaVach,
-                                             MaLoaiSanPham = sp.MaLoaiSanPham,
-                                             TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
-                                             MaHangSanXuat = sp.MaHangSanXuat,
-                                             TenHangSanXuat = sp.MaHangSanXuatNavigation.TenHangSanXuat
-                                         })
-                                         .ToListAsync();
+		/// <summary>
+		/// Lấy danh sách tất cả các sản phẩm.
+		/// </summary>
+		/// <returns>Một danh sách các sản phẩm, bao gồm thông tin loại sản phẩm và hãng sản xuất.</returns>
+		// GET: api/sanpham
+		[HttpGet]
+		public async Task<ActionResult<IEnumerable<SanPhamDto>>> Get()
+		{
+			var products = await _context.SanPhams
+										 .Where(sp => sp.Hide == false || sp.Hide == null) // Chỉ lấy sản phẩm không bị ẩn
+										 .Include(sp => sp.MaLoaiSanPhamNavigation)
+										 .Include(sp => sp.MaHangSanXuatNavigation)
+										 .Select(sp => new SanPhamDto
+										 {
+											 MaSanPham = sp.MaSanPham,
+											 TenSanPham = sp.TenSanPham,
+											 Mota = sp.Mota,
+											 SoLuong = sp.SoLuong,
+											 DonGia = sp.DonGia,
+											 KhoiLuong = sp.KhoiLuong,
+											 KichThuoc = sp.KichThuoc,
+											 XuatXu = sp.XuatXu,
+											 Image = sp.Image,
+											 MaVach = sp.MaVach,
+											 TrangThai = sp.TrangThai,
+											 NgayTao = sp.NgayTao,
+											 NgayCapNhat = sp.NgayCapNhat,
+											 MaLoaiSanPham = sp.MaLoaiSanPham,
+											 TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
+											 MaHangSanXuat = sp.MaHangSanXuat,
+											 TenHangSanXuat = sp.MaHangSanXuatNavigation.TenHangSanXuat
+										 })
+										 .ToListAsync();
 
-            return Ok(products);
-        }
+			return Ok(products);
+		}
 
 
-        /// <summary>
-        /// Lấy thông tin chi tiết của một sản phẩm dựa vào ID.
-        /// </summary>
-        /// <param name="id">ID của sản phẩm cần lấy thông tin.</param>
-        /// <returns>Thông tin chi tiết của sản phẩm nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
-        // GET: api/sanpham/{id}
-        [HttpGet("{id}")]
-        public async Task<ActionResult<SanPhamDto>> GetById(int id)
-        {
-            var product = await _context.SanPhams
-                                        .Where(sp => sp.MaSanPham == id && (sp.Hide == false || sp.Hide == null))  // Chỉ lấy sản phẩm không bị ẩn
-                                        .Include(sp => sp.MaLoaiSanPhamNavigation)
-                                        .Include(sp => sp.MaHangSanXuatNavigation)
-                                        .Select(sp => new SanPhamDto
-                                        {
-                                            MaSanPham = sp.MaSanPham,
-                                            TenSanPham = sp.TenSanPham,
-                                            Mota = sp.Mota,
-                                            SoLuong = sp.SoLuong,
-                                            DonGia = sp.DonGia,
-                                            XuatXu = sp.XuatXu,
-                                            Image = sp.Image,
-                                            MaVach = sp.MaVach,
-                                            MaLoaiSanPham = sp.MaLoaiSanPham,
-                                            TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
-                                            MaHangSanXuat = sp.MaHangSanXuat,
-                                            TenHangSanXuat = sp.MaHangSanXuatNavigation.TenHangSanXuat
-                                        })
-                                        .FirstOrDefaultAsync();
 
-            if (product == null)
-            {
-                return NotFound("Product not found.");
-            }
+		/// <summary>
+		/// Lấy thông tin chi tiết của một sản phẩm dựa vào ID.
+		/// </summary>
+		/// <param name="id">ID của sản phẩm cần lấy thông tin.</param>
+		/// <returns>Thông tin chi tiết của sản phẩm nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
+		// GET: api/sanpham/{id}
+		[HttpGet("{id}")]
+		public async Task<ActionResult<SanPhamDto>> GetById(int id)
+		{
+			var product = await _context.SanPhams
+										.Where(sp => sp.MaSanPham == id && (sp.Hide == false || sp.Hide == null)) // Chỉ lấy sản phẩm không bị ẩn
+										.Include(sp => sp.MaLoaiSanPhamNavigation)
+										.Include(sp => sp.MaHangSanXuatNavigation)
+										.Select(sp => new SanPhamDto
+										{
+											MaSanPham = sp.MaSanPham,
+											TenSanPham = sp.TenSanPham,
+											Mota = sp.Mota,
+											SoLuong = sp.SoLuong,
+											DonGia = sp.DonGia,
+											KhoiLuong = sp.KhoiLuong,
+											KichThuoc = sp.KichThuoc,
+											XuatXu = sp.XuatXu,
+											Image = sp.Image,
+											MaVach = sp.MaVach,
+											TrangThai = sp.TrangThai,
+											NgayTao = sp.NgayTao,
+											NgayCapNhat = sp.NgayCapNhat,
+											MaLoaiSanPham = sp.MaLoaiSanPham,
+											TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
+											MaHangSanXuat = sp.MaHangSanXuat,
+											TenHangSanXuat = sp.MaHangSanXuatNavigation.TenHangSanXuat
+										})
+										.FirstOrDefaultAsync();
 
-            return Ok(product);
-        }
+			if (product == null)
+			{
+				return NotFound("Product not found.");
+			}
 
-        [HttpPost]
+			return Ok(product);
+		}
+
+
+		[HttpPost]
         [Route("uploadfile")]
         public async Task<ActionResult<SanPham>> CreateProduct([FromForm] SanPhamDto newProductDto)
         {
@@ -102,21 +114,25 @@ namespace APIQLKho.Controllers
                 return BadRequest("Product data is null.");
             }
 
-            // Tạo sản phẩm mới
-            var newProduct = new SanPham
-            {
-                TenSanPham = newProductDto.TenSanPham,
-                Mota = newProductDto.Mota,
-                SoLuong = newProductDto.SoLuong,
-                DonGia = newProductDto.DonGia,
-                XuatXu = newProductDto.XuatXu,
-                MaLoaiSanPham = newProductDto.MaLoaiSanPham,
-                MaHangSanXuat = newProductDto.MaHangSanXuat,
-                Hide = false
-            };
+			// Tạo sản phẩm mới
+			var newProduct = new SanPham
+			{
+				TenSanPham = newProductDto.TenSanPham,
+				Mota = newProductDto.Mota,
+				SoLuong = newProductDto.SoLuong,
+				DonGia = newProductDto.DonGia,
+				KhoiLuong = newProductDto.KhoiLuong,
+				KichThuoc = newProductDto.KichThuoc,
+				XuatXu = newProductDto.XuatXu,
+				MaLoaiSanPham = newProductDto.MaLoaiSanPham,
+				MaHangSanXuat = newProductDto.MaHangSanXuat,
+				NgayTao = DateTime.Now,
+				TrangThai = true,
+				Hide = false
+			};
 
-            // Xử lý ảnh tải lên (nếu có)
-            if (newProductDto.Img != null && newProductDto.Img.Length > 0)
+			// Xử lý ảnh tải lên (nếu có)
+			if (newProductDto.Img != null && newProductDto.Img.Length > 0)
             {
                 var fileName = Path.GetFileName(newProductDto.Img.FileName);
                 var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
@@ -213,17 +229,20 @@ namespace APIQLKho.Controllers
                 return NotFound("Product not found.");
             }
 
-            // Cập nhật các thuộc tính của sản phẩm (không bao gồm ảnh)
-            existingProduct.TenSanPham = updatedProductDto.TenSanPham;
-            existingProduct.Mota = updatedProductDto.Mota;
-            existingProduct.SoLuong = updatedProductDto.SoLuong;
-            existingProduct.DonGia = updatedProductDto.DonGia;
-            existingProduct.XuatXu = updatedProductDto.XuatXu;
-            existingProduct.MaLoaiSanPham = updatedProductDto.MaLoaiSanPham;
-            existingProduct.MaHangSanXuat = updatedProductDto.MaHangSanXuat;
+			// Cập nhật các thuộc tính của sản phẩm (không bao gồm ảnh)
+			existingProduct.TenSanPham = updatedProductDto.TenSanPham;
+			existingProduct.Mota = updatedProductDto.Mota;
+			existingProduct.SoLuong = updatedProductDto.SoLuong;
+			existingProduct.DonGia = updatedProductDto.DonGia;
+			existingProduct.KhoiLuong = updatedProductDto.KhoiLuong;
+			existingProduct.KichThuoc = updatedProductDto.KichThuoc;
+			existingProduct.XuatXu = updatedProductDto.XuatXu;
+			existingProduct.MaLoaiSanPham = updatedProductDto.MaLoaiSanPham;
+			existingProduct.MaHangSanXuat = updatedProductDto.MaHangSanXuat;
+			existingProduct.NgayCapNhat = DateTime.Now;
 
-            // Xử lý ảnh nếu có tải lên ảnh mới
-            if (updatedProductDto.Img != null && updatedProductDto.Img.Length > 0)
+			// Xử lý ảnh nếu có tải lên ảnh mới
+			if (updatedProductDto.Img != null && updatedProductDto.Img.Length > 0)
             {
                 // Đường dẫn ảnh cũ
                 var oldImagePath = existingProduct.Image;

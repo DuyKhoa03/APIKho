@@ -36,7 +36,7 @@ namespace APIQLKho.Controllers
                                               Diachi = kh.Diachi,
                                               Email = kh.Email,
                                               MaLoai = kh.MaLoai,
-                                              TenLoaiKhachHang = kh.MaLoaiNavigation.TenLoai
+                                              TenLoai = kh.MaLoaiNavigation.TenLoai
                                           })
                                           .ToListAsync();
 
@@ -63,7 +63,7 @@ namespace APIQLKho.Controllers
                                              Diachi = kh.Diachi,
                                              Email = kh.Email,
                                              MaLoai = kh.MaLoai,
-                                             TenLoaiKhachHang = kh.MaLoaiNavigation.TenLoai
+                                             TenLoai = kh.MaLoaiNavigation.TenLoai
                                          })
                                          .FirstOrDefaultAsync();
 
@@ -206,7 +206,7 @@ namespace APIQLKho.Controllers
 												  MaKhachHang = kh.MaKhachHang,
 												  TenKhachHang = kh.TenKhachHang,
 												  MaLoai = kh.MaLoai,
-												  TenLoaiKhachHang = kh.MaLoaiNavigation.TenLoai
+												  TenLoai = kh.MaLoaiNavigation.TenLoai
 											  })
 											  .ToListAsync();
 

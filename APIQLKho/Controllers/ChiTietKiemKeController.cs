@@ -18,27 +18,30 @@ namespace APIQLKho.Controllers
             _context = context;
         }
 
-        /// <summary>
-        /// Lấy danh sách tất cả các chi tiết kiểm kê
-        /// </summary>
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<ChiTietKiemKeDto>>> Get()
-        {
-            var details = await _context.ChiTietKiemKes
-                                        .Include(ct => ct.MaSanPhamNavigation)
-                                        .Include(ct => ct.MaKiemKeNavigation)
-                                        .Select(ct => new ChiTietKiemKeDto
-                                        {
-                                            MaKiemKe = ct.MaKiemKe,
-                                            MaSanPham = ct.MaSanPham,
-                                            TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
-                                            SoLuongTon = ct.SoLuongTon,
-                                            TrangThai = ct.TrangThai
-                                        })
-                                        .ToListAsync();
+		/// <summary>
+		/// Lấy danh sách tất cả các chi tiết kiểm kê
+		/// </summary>
+		[HttpGet]
+		public async Task<ActionResult<IEnumerable<ChiTietKiemKeDto>>> Get()
+		{
+			var details = await _context.ChiTietKiemKes
+										.Include(ct => ct.MaSanPhamNavigation)
+										.Include(ct => ct.MaKiemKeNavigation)
+										.Select(ct => new ChiTietKiemKeDto
+										{
+											MaKiemKe = ct.MaKiemKe,
+											MaSanPham = ct.MaSanPham,
+											TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
+											SoLuongTon = ct.SoLuongTon,
+											SoLuongThucTe = ct.SoLuongThucTe,
+											TrangThai = ct.TrangThai,
+											NguyenNhan = ct.NguyenNhan,
+											Anh = ct.Anh
+										})
+										.ToListAsync();
 
-            return Ok(details);
-        }
+			return Ok(details);
+		}
 
 		/// <summary>
 		/// Lấy chi tiết kiểm kê theo mã kiểm kê
@@ -57,7 +60,10 @@ namespace APIQLKho.Controllers
 											MaSanPham = ct.MaSanPham,
 											TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
 											SoLuongTon = ct.SoLuongTon,
-											TrangThai = ct.TrangThai
+											SoLuongThucTe = ct.SoLuongThucTe,
+											TrangThai = ct.TrangThai,
+											NguyenNhan = ct.NguyenNhan,
+											Anh = ct.Anh
 										})
 										.ToListAsync();
 
@@ -75,72 +81,128 @@ namespace APIQLKho.Controllers
 		/// </summary>
 		/// <param name="detailDto">Dữ liệu chi tiết kiểm kê cần tạo</param>
 		[HttpPost]
-        public async Task<ActionResult<ChiTietKiemKe>> CreateDetail(ChiTietKiemKeDto detailDto)
-        {
-            if (detailDto == null)
-            {
-                return BadRequest("Detail data is null.");
-            }
+		public async Task<ActionResult<ChiTietKiemKe>> CreateDetail([FromForm] ChiTietKiemKeDto detailDto)
+		{
+			if (detailDto == null)
+			{
+				return BadRequest("Detail data is null.");
+			}
 
-            var newDetail = new ChiTietKiemKe
-            {
-                MaSanPham = detailDto.MaSanPham,
-                MaKiemKe = detailDto.MaKiemKe,
-                SoLuongTon = detailDto.SoLuongTon,
-                TrangThai = detailDto.TrangThai
-            };
+			var newDetail = new ChiTietKiemKe
+			{
+				MaSanPham = detailDto.MaSanPham,
+				MaKiemKe = detailDto.MaKiemKe,
+				SoLuongTon = detailDto.SoLuongTon,
+				SoLuongThucTe = detailDto.SoLuongThucTe,
+				TrangThai = detailDto.TrangThai,
+				NguyenNhan = detailDto.NguyenNhan
+			};
 
-            _context.ChiTietKiemKes.Add(newDetail);
-            await _context.SaveChangesAsync();
+			// Xử lý ảnh tải lên (nếu có)
+			if (detailDto.Img != null && detailDto.Img.Length > 0)
+			{
+				var fileName = Path.GetFileName(detailDto.Img.FileName);
+				var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
 
-            return CreatedAtAction(nameof(GetById), new { id = newDetail.MaKiemKe }, newDetail);
-        }
+				using (var stream = new FileStream(filePath, FileMode.Create))
+				{
+					await detailDto.Img.CopyToAsync(stream);
+				}
 
-        /// <summary>
-        /// Cập nhật một chi tiết kiểm kê theo mã kiểm kê
-        /// </summary>
-        /// <param name="id">Mã kiểm kê</param>
-        /// <param name="detailDto">Dữ liệu chi tiết kiểm kê cần cập nhật</param>
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDetail(int id, ChiTietKiemKeDto detailDto)
-        {
-            if (detailDto == null)
-            {
-                return BadRequest("Detail data is null.");
-            }
+				newDetail.Anh = "/UploadedImages/" + fileName;
+			}
 
-            var existingDetail = await _context.ChiTietKiemKes.FindAsync(id);
-            if (existingDetail == null)
-            {
-                return NotFound("Detail not found.");
-            }
+			_context.ChiTietKiemKes.Add(newDetail);
+			await _context.SaveChangesAsync();
 
-            existingDetail.MaSanPham = detailDto.MaSanPham;
-            existingDetail.SoLuongTon = detailDto.SoLuongTon;
-            existingDetail.TrangThai = detailDto.TrangThai;
+			return CreatedAtAction(nameof(GetById), new { id = newDetail.MaKiemKe }, newDetail);
+		}
 
-            await _context.SaveChangesAsync();
+		/// <summary>
+		/// Cập nhật một chi tiết kiểm kê theo mã kiểm kê
+		/// </summary>
+		/// <param name="id">Mã kiểm kê</param>
+		/// <param name="detailDto">Dữ liệu chi tiết kiểm kê cần cập nhật</param>
+		[HttpPut("{id}")]
+		public async Task<IActionResult> UpdateDetail(int id, [FromForm] ChiTietKiemKeDto detailDto)
+		{
+			if (detailDto == null)
+			{
+				return BadRequest("Detail data is null.");
+			}
 
-            return NoContent();
-        }
+			var existingDetail = await _context.ChiTietKiemKes.FindAsync(id);
+			if (existingDetail == null)
+			{
+				return NotFound("Detail not found.");
+			}
 
-        /// <summary>
-        /// Xóa một chi tiết kiểm kê theo mã kiểm kê
-        /// </summary>
-        /// <param name="id">Mã kiểm kê</param>
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDetail(int id)
-        {
-            var detail = await _context.ChiTietKiemKes.FindAsync(id);
-            if (detail == null)
-            {
-                return NotFound("Detail not found.");
-            }
+			existingDetail.MaSanPham = detailDto.MaSanPham;
+			existingDetail.SoLuongTon = detailDto.SoLuongTon;
+			existingDetail.SoLuongThucTe = detailDto.SoLuongThucTe;
+			existingDetail.TrangThai = detailDto.TrangThai;
+			existingDetail.NguyenNhan = detailDto.NguyenNhan;
 
-            _context.ChiTietKiemKes.Remove(detail);
-            await _context.SaveChangesAsync();
+			// Xử lý ảnh nếu có tải lên ảnh mới
+			if (detailDto.Img != null && detailDto.Img.Length > 0)
+			{
+				// Đường dẫn ảnh cũ
+				var oldImagePath = existingDetail.Anh;
 
-            return NoContent();
-        }
-    }
+				// Lưu ảnh mới
+				var fileName = Path.GetFileName(detailDto.Img.FileName);
+				var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+
+				using (var stream = new FileStream(filePath, FileMode.Create))
+				{
+					await detailDto.Img.CopyToAsync(stream);
+				}
+
+				existingDetail.Anh = "/UploadedImages/" + fileName;
+
+				// Xóa ảnh cũ nếu tồn tại
+				if (!string.IsNullOrEmpty(oldImagePath))
+				{
+					var fullOldImagePath = Path.Combine(Directory.GetCurrentDirectory(), oldImagePath.TrimStart('/'));
+					if (System.IO.File.Exists(fullOldImagePath))
+					{
+						System.IO.File.Delete(fullOldImagePath);
+					}
+				}
+			}
+
+			await _context.SaveChangesAsync();
+
+			return NoContent();
+		}
+
+		/// <summary>
+		/// Xóa một chi tiết kiểm kê theo mã kiểm kê
+		/// </summary>
+		/// <param name="id">Mã kiểm kê</param>
+		[HttpDelete("{id}")]
+		public async Task<IActionResult> DeleteDetail(int id)
+		{
+			var detail = await _context.ChiTietKiemKes.FindAsync(id);
+			if (detail == null)
+			{
+				return NotFound("Detail not found.");
+			}
+
+			// Xóa ảnh liên quan nếu có
+			if (!string.IsNullOrEmpty(detail.Anh))
+			{
+				var fullImagePath = Path.Combine(Directory.GetCurrentDirectory(), detail.Anh.TrimStart('/'));
+				if (System.IO.File.Exists(fullImagePath))
+				{
+					System.IO.File.Delete(fullImagePath);
+				}
+			}
+
+			_context.ChiTietKiemKes.Remove(detail);
+			await _context.SaveChangesAsync();
+
+			return NoContent();
+		}
+	}
 }

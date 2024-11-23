@@ -19,6 +19,10 @@ public partial class SanPham
 
     public decimal? DonGia { get; set; }
 
+    public double? KhoiLuong { get; set; }
+
+    public string? KichThuoc { get; set; }
+
     public string? XuatXu { get; set; }
 
     public string? Image { get; set; }
@@ -27,15 +31,21 @@ public partial class SanPham
 
     public bool? Hide { get; set; }
 
+    public DateTime? NgayTao { get; set; }
+
+    public DateTime? NgayCapNhat { get; set; }
+
+    public bool? TrangThai { get; set; }
+
     public virtual ICollection<ChiTietKiemKe> ChiTietKiemKes { get; set; } = new List<ChiTietKiemKe>();
 
     public virtual ICollection<ChiTietPhieuNhapHang> ChiTietPhieuNhapHangs { get; set; } = new List<ChiTietPhieuNhapHang>();
 
     public virtual ICollection<ChiTietPhieuXuatHang> ChiTietPhieuXuatHangs { get; set; } = new List<ChiTietPhieuXuatHang>();
 
-    public virtual ICollection<DoanhThu> DoanhThus { get; set; } = new List<DoanhThu>();
-
     public virtual HangSanXuat MaHangSanXuatNavigation { get; set; } = null!;
 
     public virtual LoaiSanPham MaLoaiSanPhamNavigation { get; set; } = null!;
+
+    public virtual ICollection<SanPhamViTri> SanPhamViTris { get; set; } = new List<SanPhamViTri>();
 }

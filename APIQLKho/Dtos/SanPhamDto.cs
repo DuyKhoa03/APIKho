@@ -7,14 +7,21 @@
         public string? Mota { get; set; }
         public int? SoLuong { get; set; }
         public decimal? DonGia { get; set; }
-        public string? XuatXu { get; set; }
+		public double? KhoiLuong { get; set; }
+
+		public string? KichThuoc { get; set; }
+		public string? XuatXu { get; set; }
         public string? Image { get; set; }
         public string? MaVach { get; set; }
 
         public bool? Hide { get; set; }
+		public DateTime? NgayTao { get; set; }
 
-        // Thông tin cơ bản về loại sản phẩm và hãng sản xuất
-        public int MaLoaiSanPham { get; set; }
+		public DateTime? NgayCapNhat { get; set; }
+		public bool? TrangThai { get; set; }
+
+		// Thông tin cơ bản về loại sản phẩm và hãng sản xuất
+		public int MaLoaiSanPham { get; set; }
         public string? TenLoaiSanPham { get; set; } // Lấy từ LoaiSanPham nếu cần
 
         public int MaHangSanXuat { get; set; }

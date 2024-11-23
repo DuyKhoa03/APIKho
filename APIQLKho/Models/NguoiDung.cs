@@ -17,6 +17,8 @@ public partial class NguoiDung
 
     public string? Sdt { get; set; }
 
+    public string? Anh { get; set; }
+
     public DateTime? NgayDk { get; set; }
 
     public int? Quyen { get; set; }

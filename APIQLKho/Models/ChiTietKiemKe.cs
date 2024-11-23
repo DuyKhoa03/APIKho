@@ -11,7 +11,13 @@ public partial class ChiTietKiemKe
 
     public int? SoLuongTon { get; set; }
 
+    public int? SoLuongThucTe { get; set; }
+
     public int? TrangThai { get; set; }
+
+    public string? NguyenNhan { get; set; }
+
+    public string? Anh { get; set; }
 
     public virtual KiemKe MaKiemKeNavigation { get; set; } = null!;
 

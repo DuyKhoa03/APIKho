@@ -69,11 +69,42 @@ namespace APIQLKho.Controllers
 
 			return Ok(productLocations);
 		}
+        /// <summary>
+        /// Lấy chi tiết sản phẩm tại vị trí dựa trên mã vị trí và mã sản phẩm.
+        /// </summary>
+        /// <param name="maViTri">Mã vị trí</param>
+        /// <param name="maSanPham">Mã sản phẩm</param>
+        [HttpGet("{maViTri}/{maSanPham}")]
+        public async Task<ActionResult<SanPhamViTriDto>> GetDetail(int maViTri, int maSanPham)
+        {
+            var detail = await _context.SanPhamViTris
+                                       .Include(spv => spv.MaViTriNavigation)
+                                       .Include(spv => spv.MaSanPhamNavigation)
+                                       .Where(spv => spv.MaViTri == maViTri && spv.MaSanPham == maSanPham)
+                                       .Select(spv => new SanPhamViTriDto
+                                       {
+                                           MaViTri = spv.MaViTri,
+                                           MaSanPham = spv.MaSanPham,
+                                           SoLuong = spv.SoLuong,
+                                           KhuVuc = spv.MaViTriNavigation.KhuVuc,
+                                           Tang = spv.MaViTriNavigation.Tang,
+                                           Ke = spv.MaViTriNavigation.Ke,
+                                           Mota = spv.MaViTriNavigation.Mota
+                                       })
+                                       .FirstOrDefaultAsync();
 
-		/// <summary>
-		/// Tạo mới thông tin sản phẩm tại vị trí.
-		/// </summary>
-		[HttpPost]
+            if (detail == null)
+            {
+                return NotFound("Product-location detail not found.");
+            }
+
+            return Ok(detail);
+        }
+
+        /// <summary>
+        /// Tạo mới thông tin sản phẩm tại vị trí.
+        /// </summary>
+        [HttpPost]
 		public async Task<ActionResult<SanPhamViTriDto>> Create(SanPhamViTriDto sanPhamViTriDto)
 		{
 			if (sanPhamViTriDto == null)

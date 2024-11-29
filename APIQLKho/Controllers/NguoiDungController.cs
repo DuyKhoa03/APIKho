@@ -53,7 +53,8 @@ namespace APIQLKho.Controllers
                 MaNguoiDung = user.MaNguoiDung,
                 TenNguoiDung = user.TenNguoiDung,
                 Quyen = user.Quyen,
-                NgayDk = user.NgayDk
+                NgayDk = user.NgayDk,
+				Anh = user.Anh
             });
         }
 

@@ -72,6 +72,7 @@ namespace APIQLKho.Controllers
 
 			return Ok(details);
 		}
+        //lay phieu chi tiet phieu dua vao ma phieu va ma sp
 		[HttpGet("{phieuXuatId}/{sanPhamId}")]
 		public async Task<ActionResult<ChiTietPhieuNhapHangDto>> GetDetail(int phieuNhapId, int sanPhamId)
 		{
@@ -152,29 +153,80 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <param name="id">Mã phiếu nhập hàng</param>
         /// <param name="detailDto">Dữ liệu chi tiết phiếu nhập hàng cần cập nhật</param>
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDetail(int id, [FromForm] ChiTietPhieuNhapHangDto detailDto)
+        [HttpPut("{id}/{productId}")]
+        public async Task<IActionResult> UpdateDetail(int id, int productId, [FromForm] ChiTietPhieuNhapHangDto detailDto)
         {
             if (detailDto == null)
             {
                 return BadRequest("Detail data is null.");
             }
 
-            var existingDetail = await _context.ChiTietPhieuNhapHangs.FindAsync(id);
+            // Tìm bản ghi hiện tại
+            var existingDetail = await _context.ChiTietPhieuNhapHangs
+                .Where(d => d.MaPhieuNhapHang == id && d.MaSanPham == productId)
+                .FirstOrDefaultAsync();
+
             if (existingDetail == null)
             {
                 return NotFound("Detail not found.");
             }
 
-            existingDetail.MaSanPham = detailDto.MaSanPham;
+            // Nếu cần thay đổi MaSanPham, phải xóa bản ghi cũ và thêm bản ghi mới
+            if (existingDetail.MaSanPham != detailDto.MaSanPham)
+            {
+                // Xóa ảnh cũ nếu có
+                if (!string.IsNullOrEmpty(existingDetail.Image))
+                {
+                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", Path.GetFileName(existingDetail.Image));
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                    }
+                }
+
+                // Xóa bản ghi cũ
+                _context.ChiTietPhieuNhapHangs.Remove(existingDetail);
+                await _context.SaveChangesAsync();
+
+                // Tạo bản ghi mới
+                var newDetail = new ChiTietPhieuNhapHang
+                {
+                    MaPhieuNhapHang = id,
+                    MaSanPham = detailDto.MaSanPham,
+                    SoLuong = detailDto.SoLuong,
+                    DonGiaNhap = detailDto.DonGiaNhap,
+                    TrangThai = detailDto.TrangThai,
+                };
+
+                // Lưu ảnh mới nếu có
+                if (detailDto.Img != null && detailDto.Img.Length > 0)
+                {
+                    var fileName = Path.GetFileName(detailDto.Img.FileName);
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await detailDto.Img.CopyToAsync(stream);
+                    }
+
+                    newDetail.Image = "/UploadedImages/" + fileName;
+                }
+
+                _context.ChiTietPhieuNhapHangs.Add(newDetail);
+                await _context.SaveChangesAsync();
+
+                return NoContent();
+            }
+
+            // Nếu không cần thay đổi MaSanPham, tiếp tục cập nhật các thuộc tính khác
             existingDetail.SoLuong = detailDto.SoLuong;
             existingDetail.DonGiaNhap = detailDto.DonGiaNhap;
             existingDetail.TrangThai = detailDto.TrangThai;
 
-            // Xử lý ảnh tải lên mới (nếu có)
+            // Xử lý ảnh nếu có tải lên mới
             if (detailDto.Img != null && detailDto.Img.Length > 0)
             {
-                // Xóa ảnh cũ nếu có
+                // Xóa ảnh cũ nếu tồn tại
                 if (!string.IsNullOrEmpty(existingDetail.Image))
                 {
                     var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", Path.GetFileName(existingDetail.Image));
@@ -200,14 +252,20 @@ namespace APIQLKho.Controllers
             return NoContent();
         }
 
+
+
         /// <summary>
         /// Xóa một chi tiết phiếu nhập hàng theo mã phiếu
         /// </summary>
         /// <param name="id">Mã phiếu nhập hàng</param>
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDetail(int id)
+        [HttpDelete("{maPhieuNhap}/{maSanPham}")]
+        public async Task<IActionResult> DeleteDetail(int maPhieuNhap, int maSanPham)
         {
-            var detail = await _context.ChiTietPhieuNhapHangs.FindAsync(id);
+            // Tìm chi tiết phiếu nhập hàng dựa trên mã phiếu nhập và mã sản phẩm
+            var detail = await _context.ChiTietPhieuNhapHangs
+                                       .FirstOrDefaultAsync(p => p.MaPhieuNhapHang == maPhieuNhap && p.MaSanPham == maSanPham);
+
+            // Kiểm tra nếu không tìm thấy chi tiết phiếu
             if (detail == null)
             {
                 return NotFound("Detail not found.");
@@ -223,10 +281,12 @@ namespace APIQLKho.Controllers
                 }
             }
 
+            // Xóa chi tiết phiếu nhập
             _context.ChiTietPhieuNhapHangs.Remove(detail);
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
+
     }
 }

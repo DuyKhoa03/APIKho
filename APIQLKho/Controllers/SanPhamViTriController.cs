@@ -70,6 +70,36 @@ namespace APIQLKho.Controllers
 			return Ok(productLocations);
 		}
         /// <summary>
+        /// Lấy danh sách các vị trí có sản phẩm dựa vào mã sản phẩm.
+        /// </summary>
+        [HttpGet("{maSanPham}")]
+        public async Task<ActionResult<IEnumerable<SanPhamViTriDto>>> GetBySanPham(int maSanPham)
+        {
+            var productLocations = await _context.SanPhamViTris
+                                                 .Where(spv => spv.MaSanPham == maSanPham)  // Lọc theo mã sản phẩm
+                                                 .Include(spv => spv.MaViTriNavigation)      // Lấy thông tin vị trí
+                                                 .Include(spv => spv.MaSanPhamNavigation)    // Lấy thông tin sản phẩm
+                                                 .Select(spv => new SanPhamViTriDto
+                                                 {
+                                                     MaViTri = spv.MaViTri,
+                                                     MaSanPham = spv.MaSanPham,
+                                                     SoLuong = spv.SoLuong,
+                                                     KhuVuc = spv.MaViTriNavigation.KhuVuc,
+                                                     Tang = spv.MaViTriNavigation.Tang,
+                                                     Ke = spv.MaViTriNavigation.Ke,
+                                                     Mota = spv.MaViTriNavigation.Mota
+                                                 })
+                                                 .ToListAsync();
+
+            if (!productLocations.Any())
+            {
+                return NotFound("No locations found for the specified product.");
+            }
+
+            return Ok(productLocations);
+        }
+
+        /// <summary>
         /// Lấy chi tiết sản phẩm tại vị trí dựa trên mã vị trí và mã sản phẩm.
         /// </summary>
         /// <param name="maViTri">Mã vị trí</param>
@@ -117,6 +147,7 @@ namespace APIQLKho.Controllers
 				MaViTri = sanPhamViTriDto.MaViTri,
 				MaSanPham = sanPhamViTriDto.MaSanPham,
 				SoLuong = sanPhamViTriDto.SoLuong
+
 			};
 
 			_context.SanPhamViTris.Add(newProductLocation);

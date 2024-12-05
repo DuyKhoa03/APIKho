@@ -144,7 +144,9 @@ namespace APIQLKho.Controllers
 
             _context.ChiTietPhieuNhapHangs.Add(newDetail);
             await _context.SaveChangesAsync();
-
+            // Cập nhật số lượng trong bảng sản phẩm bằng SQL
+            string updateSql = "UPDATE SanPham SET SoLuong = SoLuong + @p0 WHERE MaSanPham = @p1";
+            await _context.Database.ExecuteSqlRawAsync(updateSql, detailDto.SoLuong, detailDto.MaSanPham);
             return CreatedAtAction(nameof(GetById), new { id = newDetail.MaPhieuNhapHang }, newDetail);
         }
 
@@ -170,7 +172,7 @@ namespace APIQLKho.Controllers
             {
                 return NotFound("Detail not found.");
             }
-
+            
             // Nếu cần thay đổi MaSanPham, phải xóa bản ghi cũ và thêm bản ghi mới
             if (existingDetail.MaSanPham != detailDto.MaSanPham)
             {
@@ -211,10 +213,13 @@ namespace APIQLKho.Controllers
 
                     newDetail.Image = "/UploadedImages/" + fileName;
                 }
-
+                // Tính toán sự thay đổi số lượng
+                var quantityDifference = detailDto.SoLuong - existingDetail.SoLuong;
                 _context.ChiTietPhieuNhapHangs.Add(newDetail);
                 await _context.SaveChangesAsync();
-
+                // Cập nhật số lượng trong bảng sản phẩm
+                string updateSql = "UPDATE SanPham SET SoLuong = SoLuong + @p0 WHERE MaSanPham = @p1";
+                await _context.Database.ExecuteSqlRawAsync(updateSql, quantityDifference, productId);
                 return NoContent();
             }
 

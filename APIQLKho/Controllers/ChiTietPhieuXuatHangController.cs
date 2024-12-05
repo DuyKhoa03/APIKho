@@ -178,6 +178,10 @@ namespace APIQLKho.Controllers
             {
                 return NotFound("Detail not found.");
             }
+            // Tìm sản phẩm trong bảng Sản phẩm
+            var product = await _context.SanPhams
+                .Where(p => p.MaSanPham == productId)
+                .FirstOrDefaultAsync();
 
             // Nếu cần thay đổi MaSanPham, phải xóa bản ghi cũ và thêm bản ghi mới
             if (existingDetail.MaSanPham != detailDto.MaSanPham)

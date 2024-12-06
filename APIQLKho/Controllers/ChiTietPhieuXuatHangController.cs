@@ -152,8 +152,10 @@ namespace APIQLKho.Controllers
 
             _context.ChiTietPhieuXuatHangs.Add(newDetail);
             await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = newDetail.MaPhieuXuatHang }, newDetail);
+			// Cập nhật số lượng trong bảng sản phẩm bằng SQL
+			string updateSql = "UPDATE SanPham SET SoLuong = SoLuong - @p0 WHERE MaSanPham = @p1";
+			await _context.Database.ExecuteSqlRawAsync(updateSql, detailDto.SoLuong, detailDto.MaSanPham);
+			return CreatedAtAction(nameof(GetById), new { id = newDetail.MaPhieuXuatHang }, newDetail);
         }
 
         /// <summary>
@@ -173,7 +175,7 @@ namespace APIQLKho.Controllers
             var existingDetail = await _context.ChiTietPhieuXuatHangs
                 .Where(d => d.MaPhieuXuatHang == id && d.MaSanPham == productId)
                 .FirstOrDefaultAsync();
-
+            var oldquantity = existingDetail.SoLuong;
             if (existingDetail == null)
             {
                 return NotFound("Detail not found.");
@@ -228,8 +230,10 @@ namespace APIQLKho.Controllers
 
                 _context.ChiTietPhieuXuatHangs.Add(newDetail);
                 await _context.SaveChangesAsync();
-
-                return NoContent();
+				// Cập nhật số lượng trong bảng sản phẩm bằng SQL
+				string updateSql1 = "UPDATE SanPham SET SoLuong = SoLuong - @p0 WHERE MaSanPham = @p1";
+				await _context.Database.ExecuteSqlRawAsync(updateSql1, newDetail.SoLuong, detailDto.MaSanPham);
+				return NoContent();
             }
 
             // Nếu không cần thay đổi MaSanPham, tiếp tục cập nhật các thuộc tính khác
@@ -264,8 +268,12 @@ namespace APIQLKho.Controllers
             }
 
             await _context.SaveChangesAsync();
-
-            return NoContent();
+			// Cập nhật số lượng trong bảng sản phẩm
+			// Tính toán sự thay đổi số lượng
+			var quantityDifference = detailDto.SoLuong - oldquantity;
+			string updateSql = "UPDATE SanPham SET SoLuong = SoLuong - @p0 WHERE MaSanPham = @p1";
+			await _context.Database.ExecuteSqlRawAsync(updateSql, quantityDifference, productId);
+			return NoContent();
         }
 
 

@@ -15,7 +15,7 @@ public partial class PhieuXuatHang
 
     public string? HinhThucThanhToan { get; set; }
 
-    public string? PhiVanChuyen { get; set; }
+    public decimal? PhiVanChuyen { get; set; }
 
     public int? TrangThai { get; set; }
 

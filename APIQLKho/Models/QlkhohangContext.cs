@@ -300,15 +300,9 @@ public partial class QlkhohangContext : DbContext
 
             entity.ToTable("PhieuXuatHang");
 
-            entity.Property(e => e.HinhThucThanhToan)
-                .HasMaxLength(1)
-                .IsUnicode(false)
-                .IsFixedLength();
+            entity.Property(e => e.HinhThucThanhToan).HasMaxLength(50);
             entity.Property(e => e.NgayXuat).HasColumnType("datetime");
-            entity.Property(e => e.PhiVanChuyen)
-                .HasMaxLength(1)
-                .IsUnicode(false)
-                .IsFixedLength();
+            entity.Property(e => e.PhiVanChuyen).HasColumnType("decimal(18, 2)");
 
             entity.HasOne(d => d.MaKhachHangNavigation).WithMany(p => p.PhieuXuatHangs)
                 .HasForeignKey(d => d.MaKhachHang)

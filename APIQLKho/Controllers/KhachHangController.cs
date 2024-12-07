@@ -201,16 +201,19 @@ namespace APIQLKho.Controllers
 			var searchResults = await _context.KhachHangs
 											  .Include(kh => kh.MaLoaiNavigation)
 											  .Where(kh => kh.TenKhachHang.Contains(keyword))
-											  .Select(kh => new KhachHangDto
-											  {
-												  MaKhachHang = kh.MaKhachHang,
-												  TenKhachHang = kh.TenKhachHang,
-												  MaLoai = kh.MaLoai,
-												  TenLoai = kh.MaLoaiNavigation.TenLoai
-											  })
-											  .ToListAsync();
+                                              .Select(kh => new KhachHangDto
+                                              {
+                                                  MaKhachHang = kh.MaKhachHang,
+                                                  TenKhachHang = kh.TenKhachHang,
+                                                  SoDt = kh.SoDt,
+                                                  Diachi = kh.Diachi,
+                                                  Email = kh.Email,
+                                                  MaLoai = kh.MaLoai,
+                                                  TenLoai = kh.MaLoaiNavigation.TenLoai
+                                              })
+                                          .ToListAsync();
 
-			return Ok(searchResults);
+            return Ok(searchResults);
 		}
 
 	}

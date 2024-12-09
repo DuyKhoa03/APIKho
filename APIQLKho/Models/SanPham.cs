@@ -27,6 +27,14 @@ public partial class SanPham
 
     public string? Image { get; set; }
 
+    public string? Image2 { get; set; }
+
+    public string? Image3 { get; set; }
+
+    public string? Image4 { get; set; }
+
+    public string? Image5 { get; set; }
+
     public string? MaVach { get; set; }
 
     public bool? Hide { get; set; }
@@ -37,6 +45,8 @@ public partial class SanPham
 
     public bool? TrangThai { get; set; }
 
+    public int MaNhaCungCap { get; set; }
+
     public virtual ICollection<ChiTietKiemKe> ChiTietKiemKes { get; set; } = new List<ChiTietKiemKe>();
 
     public virtual ICollection<ChiTietPhieuNhapHang> ChiTietPhieuNhapHangs { get; set; } = new List<ChiTietPhieuNhapHang>();
@@ -46,6 +56,8 @@ public partial class SanPham
     public virtual HangSanXuat MaHangSanXuatNavigation { get; set; } = null!;
 
     public virtual LoaiSanPham MaLoaiSanPhamNavigation { get; set; } = null!;
+
+    public virtual NhaCungCap MaNhaCungCapNavigation { get; set; } = null!;
 
     public virtual ICollection<SanPhamViTri> SanPhamViTris { get; set; } = new List<SanPhamViTri>();
 }

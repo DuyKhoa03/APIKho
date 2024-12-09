@@ -19,6 +19,16 @@ public partial class ChiTietKiemKe
 
     public string? Anh { get; set; }
 
+    public string? Anh2 { get; set; }
+
+    public string? Anh3 { get; set; }
+
+    public string? Anh4 { get; set; }
+
+    public string? Anh5 { get; set; }
+
+    public string? Anh6 { get; set; }
+
     public virtual KiemKe MaKiemKeNavigation { get; set; } = null!;
 
     public virtual SanPham MaSanPhamNavigation { get; set; } = null!;

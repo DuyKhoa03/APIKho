@@ -28,84 +28,100 @@ namespace APIQLKho.Controllers
 		/// <returns>Một danh sách các sản phẩm, bao gồm thông tin loại sản phẩm và hãng sản xuất.</returns>
 		// GET: api/sanpham
 		[HttpGet]
-		public async Task<ActionResult<IEnumerable<SanPhamDto>>> Get()
-		{
-			var products = await _context.SanPhams
-										 .Where(sp => sp.Hide == false || sp.Hide == null) // Chỉ lấy sản phẩm không bị ẩn
-										 .Include(sp => sp.MaLoaiSanPhamNavigation)
-										 .Include(sp => sp.MaHangSanXuatNavigation)
-										 .Select(sp => new SanPhamDto
-										 {
-											 MaSanPham = sp.MaSanPham,
-											 TenSanPham = sp.TenSanPham,
-											 Mota = sp.Mota,
-											 SoLuong = sp.SoLuong,
-											 DonGia = sp.DonGia,
-											 KhoiLuong = sp.KhoiLuong,
-											 KichThuoc = sp.KichThuoc,
-											 XuatXu = sp.XuatXu,
-											 Image = sp.Image,
-											 MaVach = sp.MaVach,
-											 TrangThai = sp.TrangThai,
-											 NgayTao = sp.NgayTao,
-											 NgayCapNhat = sp.NgayCapNhat,
-											 MaLoaiSanPham = sp.MaLoaiSanPham,
-											 TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
-											 MaHangSanXuat = sp.MaHangSanXuat,
-											 TenHangSanXuat = sp.MaHangSanXuatNavigation.TenHangSanXuat
-										 })
-										 .ToListAsync();
+        public async Task<ActionResult<IEnumerable<SanPhamDto>>> Get()
+        {
+            var products = await _context.SanPhams
+                                         .Where(sp => sp.Hide == false || sp.Hide == null) // Chỉ lấy sản phẩm không bị ẩn
+                                         .Include(sp => sp.MaLoaiSanPhamNavigation)
+                                         .Include(sp => sp.MaHangSanXuatNavigation)
+                                         .Include(sp => sp.MaNhaCungCapNavigation) // Bao gồm thông tin nhà cung cấp
+                                         .Select(sp => new SanPhamDto
+                                         {
+                                             MaSanPham = sp.MaSanPham,
+                                             TenSanPham = sp.TenSanPham,
+                                             Mota = sp.Mota,
+                                             SoLuong = sp.SoLuong,
+                                             DonGia = sp.DonGia,
+                                             KhoiLuong = sp.KhoiLuong,
+                                             KichThuoc = sp.KichThuoc,
+                                             XuatXu = sp.XuatXu,
+                                             Image = sp.Image,
+                                             Image2 = sp.Image2,
+                                             Image3 = sp.Image3,
+                                             Image4 = sp.Image4,
+                                             Image5 = sp.Image5,
+                                             MaVach = sp.MaVach,
+                                             TrangThai = sp.TrangThai,
+                                             NgayTao = sp.NgayTao,
+                                             NgayCapNhat = sp.NgayCapNhat,
+                                             MaLoaiSanPham = sp.MaLoaiSanPham,
+                                             TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
+                                             MaHangSanXuat = sp.MaHangSanXuat,
+                                             TenHangSanXuat = sp.MaHangSanXuatNavigation.TenHangSanXuat,
+                                             MaNhaCungCap = sp.MaNhaCungCap,
+                                             TenNhaCungCap = sp.MaNhaCungCapNavigation.TenNhaCungCap
+                                         })
+                                         .ToListAsync();
 
-			return Ok(products);
-		}
-
-
-
-		/// <summary>
-		/// Lấy thông tin chi tiết của một sản phẩm dựa vào ID.
-		/// </summary>
-		/// <param name="id">ID của sản phẩm cần lấy thông tin.</param>
-		/// <returns>Thông tin chi tiết của sản phẩm nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
-		// GET: api/sanpham/{id}
-		[HttpGet("{id}")]
-		public async Task<ActionResult<SanPhamDto>> GetById(int id)
-		{
-			var product = await _context.SanPhams
-										.Where(sp => sp.MaSanPham == id && (sp.Hide == false || sp.Hide == null)) // Chỉ lấy sản phẩm không bị ẩn
-										.Include(sp => sp.MaLoaiSanPhamNavigation)
-										.Include(sp => sp.MaHangSanXuatNavigation)
-										.Select(sp => new SanPhamDto
-										{
-											MaSanPham = sp.MaSanPham,
-											TenSanPham = sp.TenSanPham,
-											Mota = sp.Mota,
-											SoLuong = sp.SoLuong,
-											DonGia = sp.DonGia,
-											KhoiLuong = sp.KhoiLuong,
-											KichThuoc = sp.KichThuoc,
-											XuatXu = sp.XuatXu,
-											Image = sp.Image,
-											MaVach = sp.MaVach,
-											TrangThai = sp.TrangThai,
-											NgayTao = sp.NgayTao,
-											NgayCapNhat = sp.NgayCapNhat,
-											MaLoaiSanPham = sp.MaLoaiSanPham,
-											TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
-											MaHangSanXuat = sp.MaHangSanXuat,
-											TenHangSanXuat = sp.MaHangSanXuatNavigation.TenHangSanXuat
-										})
-										.FirstOrDefaultAsync();
-
-			if (product == null)
-			{
-				return NotFound("Product not found.");
-			}
-
-			return Ok(product);
-		}
+            return Ok(products);
+        }
 
 
-		[HttpPost]
+
+
+        /// <summary>
+        /// Lấy thông tin chi tiết của một sản phẩm dựa vào ID.
+        /// </summary>
+        /// <param name="id">ID của sản phẩm cần lấy thông tin.</param>
+        /// <returns>Thông tin chi tiết của sản phẩm nếu tìm thấy; nếu không, trả về thông báo lỗi.</returns>
+        // GET: api/sanpham/{id}
+        [HttpGet("{id}")]
+        public async Task<ActionResult<SanPhamDto>> GetById(int id)
+        {
+            var product = await _context.SanPhams
+                                        .Where(sp => sp.MaSanPham == id && (sp.Hide == false || sp.Hide == null)) // Chỉ lấy sản phẩm không bị ẩn
+                                        .Include(sp => sp.MaLoaiSanPhamNavigation)
+                                        .Include(sp => sp.MaHangSanXuatNavigation)
+                                        .Include(sp => sp.MaNhaCungCapNavigation) // Bao gồm thông tin nhà cung cấp
+                                        .Select(sp => new SanPhamDto
+                                        {
+                                            MaSanPham = sp.MaSanPham,
+                                            TenSanPham = sp.TenSanPham,
+                                            Mota = sp.Mota,
+                                            SoLuong = sp.SoLuong,
+                                            DonGia = sp.DonGia,
+                                            KhoiLuong = sp.KhoiLuong,
+                                            KichThuoc = sp.KichThuoc,
+                                            XuatXu = sp.XuatXu,
+                                            Image = sp.Image,
+                                            Image2 = sp.Image2,
+                                            Image3 = sp.Image3,
+                                            Image4 = sp.Image4,
+                                            Image5 = sp.Image5,
+                                            MaVach = sp.MaVach,
+                                            TrangThai = sp.TrangThai,
+                                            NgayTao = sp.NgayTao,
+                                            NgayCapNhat = sp.NgayCapNhat,
+                                            MaLoaiSanPham = sp.MaLoaiSanPham,
+                                            TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
+                                            MaHangSanXuat = sp.MaHangSanXuat,
+                                            TenHangSanXuat = sp.MaHangSanXuatNavigation.TenHangSanXuat,
+                                            MaNhaCungCap = sp.MaNhaCungCap,
+                                            TenNhaCungCap = sp.MaNhaCungCapNavigation.TenNhaCungCap
+                                        })
+                                        .FirstOrDefaultAsync();
+
+            if (product == null)
+            {
+                return NotFound("Product not found.");
+            }
+
+            return Ok(product);
+        }
+
+
+
+        [HttpPost]
         [Route("uploadfile")]
         public async Task<ActionResult<SanPham>> CreateProduct([FromForm] SanPhamDto newProductDto)
         {
@@ -114,42 +130,61 @@ namespace APIQLKho.Controllers
                 return BadRequest("Product data is null.");
             }
 
-			// Tạo sản phẩm mới
-			var newProduct = new SanPham
-			{
-				TenSanPham = newProductDto.TenSanPham,
-				Mota = newProductDto.Mota,
-				SoLuong = newProductDto.SoLuong,
-				DonGia = newProductDto.DonGia,
-				KhoiLuong = newProductDto.KhoiLuong,
-				KichThuoc = newProductDto.KichThuoc,
-				XuatXu = newProductDto.XuatXu,
-				MaLoaiSanPham = newProductDto.MaLoaiSanPham,
-				MaHangSanXuat = newProductDto.MaHangSanXuat,
-				NgayTao = DateTime.Now,
-				TrangThai = true,
-				Hide = false
-			};
-
-			// Xử lý ảnh tải lên (nếu có)
-			if (newProductDto.Img != null && newProductDto.Img.Length > 0)
+            // Tạo sản phẩm mới
+            var newProduct = new SanPham
             {
-                var fileName = Path.GetFileName(newProductDto.Img.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+                TenSanPham = newProductDto.TenSanPham,
+                Mota = newProductDto.Mota,
+                SoLuong = newProductDto.SoLuong,
+                DonGia = newProductDto.DonGia,
+                KhoiLuong = newProductDto.KhoiLuong,
+                KichThuoc = newProductDto.KichThuoc,
+                XuatXu = newProductDto.XuatXu,
+                MaLoaiSanPham = newProductDto.MaLoaiSanPham,
+                MaHangSanXuat = newProductDto.MaHangSanXuat,
+                MaNhaCungCap = newProductDto.MaNhaCungCap,
+                NgayTao = DateTime.Now,
+                TrangThai = true,
+                Hide = false,
+                
+                
+            };
 
-                using (var stream = new FileStream(filePath, FileMode.Create))
+            // Xử lý danh sách ảnh tải lên
+            if (newProductDto.Images != null && newProductDto.Images.Any())
+            {
+                var imagePaths = new List<string>();
+                foreach (var img in newProductDto.Images)
                 {
-                    await newProductDto.Img.CopyToAsync(stream);
+                    var fileName = Path.GetFileName(img.FileName);
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await img.CopyToAsync(stream);
+                    }
+
+                    imagePaths.Add("/UploadedImages/" + fileName);
                 }
 
-                newProduct.Image = "/UploadedImages/" + fileName;
+                // Gán đường dẫn ảnh vào các trường Image, Image2, ...
+                newProduct.Image = imagePaths.ElementAtOrDefault(0); // Ảnh 1
+                newProduct.Image2 = imagePaths.ElementAtOrDefault(1); // Ảnh 2
+                newProduct.Image3 = imagePaths.ElementAtOrDefault(2); // Ảnh 3
+                newProduct.Image4 = imagePaths.ElementAtOrDefault(3); // Ảnh 4
+                newProduct.Image5 = imagePaths.ElementAtOrDefault(4); // Ảnh 5
             }
             else
             {
-                newProduct.Image = ""; // Trường hợp không có ảnh
+                // Nếu không có ảnh nào được tải lên
+                newProduct.Image = "";
+                newProduct.Image2 = "";
+                newProduct.Image3 = "";
+                newProduct.Image4 = "";
+                newProduct.Image5 = "";
             }
 
-            // Thêm sản phẩm mới vào cơ sở dữ liệu trước để có thể sử dụng MaSanPham
+            // Thêm sản phẩm mới vào cơ sở dữ liệu
             _context.SanPhams.Add(newProduct);
             await _context.SaveChangesAsync();
 
@@ -173,12 +208,12 @@ namespace APIQLKho.Controllers
                 var barcodeFileName = $"barcode_{newProduct.MaSanPham}.png";
                 var barcodeFilePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", barcodeFileName);
 
-                using (var bitmap = new Bitmap(pixelData.Width, pixelData.Height, System.Drawing.Imaging.PixelFormat.Format32bppRgb))
+                using (var bitmap = new Bitmap(pixelData.Width, pixelData.Height, PixelFormat.Format32bppRgb))
                 {
                     var bitmapData = bitmap.LockBits(
                         new Rectangle(0, 0, bitmap.Width, bitmap.Height),
                         ImageLockMode.WriteOnly,
-                        System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+                        PixelFormat.Format32bppRgb);
                     try
                     {
                         Marshal.Copy(pixelData.Pixels, 0, bitmapData.Scan0, pixelData.Pixels.Length);
@@ -208,6 +243,7 @@ namespace APIQLKho.Controllers
 
 
 
+
         /// <summary>
         /// Cập nhật thông tin của một sản phẩm dựa vào ID.
         /// </summary>
@@ -229,45 +265,65 @@ namespace APIQLKho.Controllers
                 return NotFound("Product not found.");
             }
 
-			// Cập nhật các thuộc tính của sản phẩm (không bao gồm ảnh)
-			existingProduct.TenSanPham = updatedProductDto.TenSanPham;
-			existingProduct.Mota = updatedProductDto.Mota;
-			existingProduct.SoLuong = updatedProductDto.SoLuong;
-			existingProduct.DonGia = updatedProductDto.DonGia;
-			existingProduct.KhoiLuong = updatedProductDto.KhoiLuong;
-			existingProduct.KichThuoc = updatedProductDto.KichThuoc;
-			existingProduct.XuatXu = updatedProductDto.XuatXu;
-			existingProduct.MaLoaiSanPham = updatedProductDto.MaLoaiSanPham;
-			existingProduct.MaHangSanXuat = updatedProductDto.MaHangSanXuat;
-			existingProduct.NgayCapNhat = DateTime.Now;
+            // Cập nhật các thuộc tính của sản phẩm (không bao gồm ảnh)
+            existingProduct.TenSanPham = updatedProductDto.TenSanPham;
+            existingProduct.Mota = updatedProductDto.Mota;
+            existingProduct.SoLuong = updatedProductDto.SoLuong;
+            existingProduct.DonGia = updatedProductDto.DonGia;
+            existingProduct.KhoiLuong = updatedProductDto.KhoiLuong;
+            existingProduct.KichThuoc = updatedProductDto.KichThuoc;
+            existingProduct.XuatXu = updatedProductDto.XuatXu;
+            existingProduct.MaLoaiSanPham = updatedProductDto.MaLoaiSanPham;
+            existingProduct.MaHangSanXuat = updatedProductDto.MaHangSanXuat;
+            existingProduct.MaNhaCungCap = updatedProductDto.MaNhaCungCap;
+            existingProduct.NgayCapNhat = DateTime.Now;
 
-			// Xử lý ảnh nếu có tải lên ảnh mới
-			if (updatedProductDto.Img != null && updatedProductDto.Img.Length > 0)
+            // Xử lý danh sách ảnh tải lên (nếu có)
+            if (updatedProductDto.Images != null && updatedProductDto.Images.Any())
             {
-                // Đường dẫn ảnh cũ
-                var oldImagePath = existingProduct.Image;
+                //// Xóa ảnh cũ nếu tồn tại
+                //var oldImages = new List<string>
+                //{
+                //    existingProduct.Image,
+                //    existingProduct.Image2,
+                //    existingProduct.Image3,
+                //    existingProduct.Image4,
+                //    existingProduct.Image5
+                //};
 
-                // Lưu ảnh mới
-                var fileName = Path.GetFileName(updatedProductDto.Img.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+                //foreach (var oldImagePath in oldImages)
+                //{
+                //    if (!string.IsNullOrEmpty(oldImagePath))
+                //    {
+                //        var fullOldImagePath = Path.Combine(Directory.GetCurrentDirectory(), oldImagePath.TrimStart('/'));
+                //        if (System.IO.File.Exists(fullOldImagePath))
+                //        {
+                //            System.IO.File.Delete(fullOldImagePath);
+                //        }
+                //    }
+                //}
 
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                // Lưu danh sách ảnh mới
+                var imagePaths = new List<string>();
+                foreach (var img in updatedProductDto.Images)
                 {
-                    await updatedProductDto.Img.CopyToAsync(stream);
-                }
+                    var fileName = Path.GetFileName(img.FileName);
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
 
-                // Cập nhật đường dẫn ảnh mới
-                existingProduct.Image = "/UploadedImages/" + fileName;
-
-                // Xóa ảnh cũ nếu tồn tại
-                if (!string.IsNullOrEmpty(oldImagePath))
-                {
-                    var fullOldImagePath = Path.Combine(Directory.GetCurrentDirectory(), oldImagePath.TrimStart('/'));
-                    if (System.IO.File.Exists(fullOldImagePath))
+                    using (var stream = new FileStream(filePath, FileMode.Create))
                     {
-                        System.IO.File.Delete(fullOldImagePath);
+                        await img.CopyToAsync(stream);
                     }
+
+                    imagePaths.Add("/UploadedImages/" + fileName);
                 }
+
+                // Gán đường dẫn ảnh mới vào các trường Image, Image2, ...
+                existingProduct.Image = imagePaths.ElementAtOrDefault(0);
+                existingProduct.Image2 = imagePaths.ElementAtOrDefault(1);
+                existingProduct.Image3 = imagePaths.ElementAtOrDefault(2);
+                existingProduct.Image4 = imagePaths.ElementAtOrDefault(3);
+                existingProduct.Image5 = imagePaths.ElementAtOrDefault(4);
             }
 
             try
@@ -288,6 +344,7 @@ namespace APIQLKho.Controllers
 
             return NoContent();
         }
+
 
 
         /// <summary>
@@ -342,50 +399,40 @@ namespace APIQLKho.Controllers
             }
 
             var searchResults = await _context.SanPhams
-                .Where(sp => sp.Hide == false || sp.Hide == null)
-                                               .Include(sp => sp.MaLoaiSanPhamNavigation)
-                                               .Include(sp => sp.MaHangSanXuatNavigation)
-                                               .Where(sp => sp.TenSanPham.Contains(keyword) || sp.Mota.Contains(keyword))
-                                               .ToListAsync();
+                                              .Where(sp => (sp.Hide == false || sp.Hide == null) &&
+                                                           (sp.TenSanPham.Contains(keyword) || sp.Mota.Contains(keyword)))
+                                              .Include(sp => sp.MaLoaiSanPhamNavigation)
+                                              .Include(sp => sp.MaHangSanXuatNavigation)
+                                              .Include(sp => sp.MaNhaCungCapNavigation) // Bao gồm thông tin nhà cung cấp
+                                              .Select(sp => new SanPhamDto
+                                              {
+                                                  MaSanPham = sp.MaSanPham,
+                                                  TenSanPham = sp.TenSanPham,
+                                                  Mota = sp.Mota,
+                                                  SoLuong = sp.SoLuong,
+                                                  DonGia = sp.DonGia,
+                                                  KhoiLuong = sp.KhoiLuong,
+                                                  KichThuoc = sp.KichThuoc,
+                                                  XuatXu = sp.XuatXu,
+                                                  Image = sp.Image,
+                                                  Image2 = sp.Image2,
+                                                  Image3 = sp.Image3,
+                                                  Image4 = sp.Image4,
+                                                  Image5 = sp.Image5,
+                                                  MaVach = sp.MaVach,
+                                                  TrangThai = sp.TrangThai,
+                                                  NgayTao = sp.NgayTao,
+                                                  NgayCapNhat = sp.NgayCapNhat,
+                                                  MaLoaiSanPham = sp.MaLoaiSanPham,
+                                                  TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
+                                                  MaHangSanXuat = sp.MaHangSanXuat,
+                                                  TenHangSanXuat = sp.MaHangSanXuatNavigation.TenHangSanXuat,
+                                                  MaNhaCungCap = sp.MaNhaCungCap,
+                                                  TenNhaCungCap = sp.MaNhaCungCapNavigation.TenNhaCungCap
+                                              })
+                                              .ToListAsync();
 
             return Ok(searchResults);
         }
-        [HttpGet("search-by-barcode/{barcode}")]
-        public async Task<ActionResult<SanPhamDto>> GetByBarcode(string barcode)
-        {
-            if (string.IsNullOrWhiteSpace(barcode))
-            {
-                return BadRequest("Barcode is empty.");
-            }
-
-            // Tìm sản phẩm dựa trên mã vạch
-            var product = await _context.SanPhams
-                                        .Where(sp => sp.MaVach == barcode && (sp.Hide == false || sp.Hide == null))
-                                        .Include(sp => sp.MaLoaiSanPhamNavigation)
-                                        .Include(sp => sp.MaHangSanXuatNavigation)
-                                        .Select(sp => new SanPhamDto
-                                        {
-                                            MaSanPham = sp.MaSanPham,
-                                            TenSanPham = sp.TenSanPham,
-                                            Mota = sp.Mota,
-                                            SoLuong = sp.SoLuong,
-                                            DonGia = sp.DonGia,
-                                            XuatXu = sp.XuatXu,
-                                            Image = sp.Image,
-                                            MaLoaiSanPham = sp.MaLoaiSanPham,
-                                            TenLoaiSanPham = sp.MaLoaiSanPhamNavigation.TenLoaiSanPham,
-                                            MaHangSanXuat = sp.MaHangSanXuat,
-                                            TenHangSanXuat = sp.MaHangSanXuatNavigation.TenHangSanXuat
-                                        })
-                                        .FirstOrDefaultAsync();
-
-            if (product == null)
-            {
-                return NotFound("Product not found.");
-            }
-
-            return Ok(product);
-        }
-
     }
 }

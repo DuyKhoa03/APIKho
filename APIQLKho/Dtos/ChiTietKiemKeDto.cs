@@ -13,8 +13,18 @@
 		public string? NguyenNhan { get; set; }
 
 		public string? Anh { get; set; }
-		public IFormFile? Img { get; set; } // Để nhận file ảnh tải lên
+        public string? Anh2 { get; set; }
 
-	}
+        public string? Anh3 { get; set; }
+
+        public string? Anh4 { get; set; }
+
+        public string? Anh5 { get; set; }
+
+        public string? Anh6 { get; set; }
+        public List<IFormFile>? Images { get; set; } // Danh sách file ảnh tải lên
+
+
+    }
 
 }

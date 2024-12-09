@@ -18,62 +18,74 @@ namespace APIQLKho.Controllers
             _context = context;
         }
 
-		/// <summary>
-		/// Lấy danh sách tất cả các chi tiết kiểm kê
-		/// </summary>
-		[HttpGet]
-		public async Task<ActionResult<IEnumerable<ChiTietKiemKeDto>>> Get()
-		{
-			var details = await _context.ChiTietKiemKes
-										.Include(ct => ct.MaSanPhamNavigation)
-										.Include(ct => ct.MaKiemKeNavigation)
-										.Select(ct => new ChiTietKiemKeDto
-										{
-											MaKiemKe = ct.MaKiemKe,
-											MaSanPham = ct.MaSanPham,
-											TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
-											SoLuongTon = ct.SoLuongTon,
-											SoLuongThucTe = ct.SoLuongThucTe,
-											TrangThai = ct.TrangThai,
-											NguyenNhan = ct.NguyenNhan,
-											Anh = ct.Anh
-										})
-										.ToListAsync();
+        /// <summary>
+        /// Lấy danh sách tất cả các chi tiết kiểm kê
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<ChiTietKiemKeDto>>> Get()
+        {
+            var details = await _context.ChiTietKiemKes
+                                        .Include(ct => ct.MaSanPhamNavigation)
+                                        .Include(ct => ct.MaKiemKeNavigation)
+                                        .Select(ct => new ChiTietKiemKeDto
+                                        {
+                                            MaKiemKe = ct.MaKiemKe,
+                                            MaSanPham = ct.MaSanPham,
+                                            TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
+                                            SoLuongTon = ct.SoLuongTon,
+                                            SoLuongThucTe = ct.SoLuongThucTe,
+                                            TrangThai = ct.TrangThai,
+                                            NguyenNhan = ct.NguyenNhan,
+                                            Anh = ct.Anh,
+                                            Anh2 = ct.Anh2,
+                                            Anh3 = ct.Anh3,
+                                            Anh4 = ct.Anh4,
+                                            Anh5 = ct.Anh5,
+                                            Anh6 = ct.Anh6
+                                        })
+                                        .ToListAsync();
 
-			return Ok(details);
-		}
+            return Ok(details);
+        }
 
-		/// <summary>
-		/// Lấy chi tiết kiểm kê theo mã kiểm kê
-		/// </summary>
-		/// <param name="id">Mã kiểm kê</param>
-		[HttpGet("{id}")]
-		public async Task<ActionResult<IEnumerable<ChiTietKiemKeDto>>> GetById(int id)
-		{
-			var details = await _context.ChiTietKiemKes
-										.Include(ct => ct.MaSanPhamNavigation)
-										.Include(ct => ct.MaKiemKeNavigation)
-										.Where(ct => ct.MaKiemKe == id)
-										.Select(ct => new ChiTietKiemKeDto
-										{
-											MaKiemKe = ct.MaKiemKe,
-											MaSanPham = ct.MaSanPham,
-											TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
-											SoLuongTon = ct.SoLuongTon,
-											SoLuongThucTe = ct.SoLuongThucTe,
-											TrangThai = ct.TrangThai,
-											NguyenNhan = ct.NguyenNhan,
-											Anh = ct.Anh
-										})
-										.ToListAsync();
 
-			if (!details.Any())
-			{
-				return NotFound("No details found for the specified inventory check ID.");
-			}
+        /// <summary>
+        /// Lấy chi tiết kiểm kê theo mã kiểm kê
+        /// </summary>
+        /// <param name="id">Mã kiểm kê</param>
+        [HttpGet("{id}")]
+        public async Task<ActionResult<IEnumerable<ChiTietKiemKeDto>>> GetById(int id)
+        {
+            var details = await _context.ChiTietKiemKes
+                                        .Include(ct => ct.MaSanPhamNavigation)
+                                        .Include(ct => ct.MaKiemKeNavigation)
+                                        .Where(ct => ct.MaKiemKe == id)
+                                        .Select(ct => new ChiTietKiemKeDto
+                                        {
+                                            MaKiemKe = ct.MaKiemKe,
+                                            MaSanPham = ct.MaSanPham,
+                                            TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
+                                            SoLuongTon = ct.SoLuongTon,
+                                            SoLuongThucTe = ct.SoLuongThucTe,
+                                            TrangThai = ct.TrangThai,
+                                            NguyenNhan = ct.NguyenNhan,
+                                            Anh = ct.Anh,
+                                            Anh2 = ct.Anh2,
+                                            Anh3 = ct.Anh3,
+                                            Anh4 = ct.Anh4,
+                                            Anh5 = ct.Anh5,
+                                            Anh6 = ct.Anh6
+                                        })
+                                        .ToListAsync();
 
-			return Ok(details);
-		}
+            if (!details.Any())
+            {
+                return NotFound("No details found for the specified inventory check ID.");
+            }
+
+            return Ok(details);
+        }
+
 
         [HttpGet("{kiemKeId}/{sanPhamId}")]
         public async Task<ActionResult<ChiTietKiemKeDto>> GetDetail(int kiemKeId, int sanPhamId)
@@ -91,7 +103,12 @@ namespace APIQLKho.Controllers
                                            SoLuongThucTe = ct.SoLuongThucTe,
                                            TrangThai = ct.TrangThai,
                                            NguyenNhan = ct.NguyenNhan,
-                                           Anh = ct.Anh
+                                           Anh = ct.Anh,
+                                           Anh2 = ct.Anh2,
+                                           Anh3 = ct.Anh3,
+                                           Anh4 = ct.Anh4,
+                                           Anh5 = ct.Anh5,
+                                           Anh6 = ct.Anh6
                                        })
                                        .FirstOrDefaultAsync();
 
@@ -108,42 +125,55 @@ namespace APIQLKho.Controllers
         /// </summary>
         /// <param name="detailDto">Dữ liệu chi tiết kiểm kê cần tạo</param>
         [HttpPost]
-		public async Task<ActionResult<ChiTietKiemKe>> CreateDetail([FromForm] ChiTietKiemKeDto detailDto)
-		{
-			if (detailDto == null)
-			{
-				return BadRequest("Detail data is null.");
-			}
+        public async Task<ActionResult<ChiTietKiemKe>> CreateDetail([FromForm] ChiTietKiemKeDto detailDto)
+        {
+            if (detailDto == null)
+            {
+                return BadRequest("Detail data is null.");
+            }
 
-			var newDetail = new ChiTietKiemKe
-			{
-				MaSanPham = detailDto.MaSanPham,
-				MaKiemKe = detailDto.MaKiemKe,
-				SoLuongTon = detailDto.SoLuongTon,
-				SoLuongThucTe = detailDto.SoLuongThucTe,
-				TrangThai = detailDto.TrangThai,
-				NguyenNhan = detailDto.NguyenNhan
-			};
+            var newDetail = new ChiTietKiemKe
+            {
+                MaSanPham = detailDto.MaSanPham,
+                MaKiemKe = detailDto.MaKiemKe,
+                SoLuongTon = detailDto.SoLuongTon,
+                SoLuongThucTe = detailDto.SoLuongThucTe,
+                TrangThai = detailDto.TrangThai,
+                NguyenNhan = detailDto.NguyenNhan
+            };
 
-			// Xử lý ảnh tải lên (nếu có)
-			if (detailDto.Img != null && detailDto.Img.Length > 0)
-			{
-				var fileName = Path.GetFileName(detailDto.Img.FileName);
-				var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+            // Xử lý danh sách ảnh tải lên (nếu có)
+            if (detailDto.Images != null && detailDto.Images.Any())
+            {
+                var imagePaths = new List<string>();
+                foreach (var img in detailDto.Images)
+                {
+                    var fileName = Path.GetFileName(img.FileName);
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
 
-				using (var stream = new FileStream(filePath, FileMode.Create))
-				{
-					await detailDto.Img.CopyToAsync(stream);
-				}
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await img.CopyToAsync(stream);
+                    }
 
-				newDetail.Anh = "/UploadedImages/" + fileName;
-			}
+                    imagePaths.Add("/UploadedImages/" + fileName);
+                }
 
-			_context.ChiTietKiemKes.Add(newDetail);
-			await _context.SaveChangesAsync();
+                // Gán danh sách ảnh vào các trường Anh, Anh2, ...
+                newDetail.Anh = imagePaths.ElementAtOrDefault(0);
+                newDetail.Anh2 = imagePaths.ElementAtOrDefault(1);
+                newDetail.Anh3 = imagePaths.ElementAtOrDefault(2);
+                newDetail.Anh4 = imagePaths.ElementAtOrDefault(3);
+                newDetail.Anh5 = imagePaths.ElementAtOrDefault(4);
+                newDetail.Anh6 = imagePaths.ElementAtOrDefault(5);
+            }
 
-			return CreatedAtAction(nameof(GetById), new { id = newDetail.MaKiemKe }, newDetail);
-		}
+            _context.ChiTietKiemKes.Add(newDetail);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetById), new { id = newDetail.MaKiemKe }, newDetail);
+        }
+
 
         /// <summary>
         /// Cập nhật một chi tiết kiểm kê theo mã kiểm kê
@@ -158,7 +188,6 @@ namespace APIQLKho.Controllers
                 return BadRequest("Detail data is null.");
             }
 
-            // Tìm bản ghi hiện tại
             var existingDetail = await _context.ChiTietKiemKes
                 .Where(d => d.MaKiemKe == id && d.MaSanPham == productId)
                 .FirstOrDefaultAsync();
@@ -168,88 +197,62 @@ namespace APIQLKho.Controllers
                 return NotFound("Detail not found.");
             }
 
-            // Nếu cần thay đổi MaSanPham
-            if (existingDetail.MaSanPham != detailDto.MaSanPham)
-            {
-                // Xóa ảnh cũ nếu có
-                if (!string.IsNullOrEmpty(existingDetail.Anh))
-                {
-                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", Path.GetFileName(existingDetail.Anh));
-                    if (System.IO.File.Exists(oldFilePath))
-                    {
-                        System.IO.File.Delete(oldFilePath);
-                    }
-                }
-
-                // Xóa bản ghi cũ
-                _context.ChiTietKiemKes.Remove(existingDetail);
-                await _context.SaveChangesAsync();
-
-                // Tạo bản ghi mới
-                var newDetail = new ChiTietKiemKe
-                {
-                    MaKiemKe = id,
-                    MaSanPham = detailDto.MaSanPham,
-                    SoLuongTon = detailDto.SoLuongTon,
-                    SoLuongThucTe = detailDto.SoLuongThucTe,
-                    TrangThai = detailDto.TrangThai,
-                    NguyenNhan = detailDto.NguyenNhan
-                };
-
-                // Lưu ảnh mới nếu có
-                if (detailDto.Img != null && detailDto.Img.Length > 0)
-                {
-                    var fileName = Path.GetFileName(detailDto.Img.FileName);
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await detailDto.Img.CopyToAsync(stream);
-                    }
-
-                    newDetail.Anh = "/UploadedImages/" + fileName;
-                }
-
-                _context.ChiTietKiemKes.Add(newDetail);
-                await _context.SaveChangesAsync();
-
-                return NoContent();
-            }
-
-            // Nếu không cần thay đổi MaSanPham, tiếp tục cập nhật các thuộc tính khác
+            // Cập nhật các thuộc tính
             existingDetail.SoLuongTon = detailDto.SoLuongTon;
             existingDetail.SoLuongThucTe = detailDto.SoLuongThucTe;
             existingDetail.TrangThai = detailDto.TrangThai;
             existingDetail.NguyenNhan = detailDto.NguyenNhan;
 
-            // Xử lý ảnh nếu có tải lên ảnh mới
-            if (detailDto.Img != null && detailDto.Img.Length > 0)
+            // Xử lý ảnh mới
+            if (detailDto.Images != null && detailDto.Images.Any())
             {
-                // Xóa ảnh cũ nếu tồn tại
-                if (!string.IsNullOrEmpty(existingDetail.Anh))
+                // Xóa ảnh cũ
+        //        var oldImages = new List<string>
+        //{
+        //    existingDetail.Anh,
+        //    existingDetail.Anh2,
+        //    existingDetail.Anh3,
+        //    existingDetail.Anh4,
+        //    existingDetail.Anh5,
+        //    existingDetail.Anh6
+        //};
+
+        //        foreach (var oldImage in oldImages.Where(img => !string.IsNullOrEmpty(img)))
+        //        {
+        //            var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), oldImage.TrimStart('/'));
+        //            if (System.IO.File.Exists(oldFilePath))
+        //            {
+        //                System.IO.File.Delete(oldFilePath);
+        //            }
+        //        }
+
+                // Lưu ảnh mới
+                var imagePaths = new List<string>();
+                foreach (var img in detailDto.Images)
                 {
-                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", Path.GetFileName(existingDetail.Anh));
-                    if (System.IO.File.Exists(oldFilePath))
+                    var fileName = Path.GetFileName(img.FileName);
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
                     {
-                        System.IO.File.Delete(oldFilePath);
+                        await img.CopyToAsync(stream);
                     }
+
+                    imagePaths.Add("/UploadedImages/" + fileName);
                 }
 
-                var fileName = Path.GetFileName(detailDto.Img.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await detailDto.Img.CopyToAsync(stream);
-                }
-
-                existingDetail.Anh = "/UploadedImages/" + fileName;
+                existingDetail.Anh = imagePaths.ElementAtOrDefault(0);
+                existingDetail.Anh2 = imagePaths.ElementAtOrDefault(1);
+                existingDetail.Anh3 = imagePaths.ElementAtOrDefault(2);
+                existingDetail.Anh4 = imagePaths.ElementAtOrDefault(3);
+                existingDetail.Anh5 = imagePaths.ElementAtOrDefault(4);
+                existingDetail.Anh6 = imagePaths.ElementAtOrDefault(5);
             }
 
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
+
 
 
         /// <summary>

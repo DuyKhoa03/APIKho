@@ -103,8 +103,8 @@ namespace APIQLKho.Controllers
                 MaNguoiDung = newExportOrderDto.MaNguoiDung,
                 MaKhachHang = newExportOrderDto.MaKhachHang,
                 NgayXuat = newExportOrderDto.NgayXuat,
-                HinhThucThanhToan = newExportOrderDto.HinhThucThanhToan,
-                PhiVanChuyen = newExportOrderDto.PhiVanChuyen,
+                HinhThucThanhToan = "",
+                PhiVanChuyen = 0,
                 TrangThai = newExportOrderDto.TrangThai,
                 Hide = false
             };
@@ -140,8 +140,8 @@ namespace APIQLKho.Controllers
             existingExportOrder.MaNguoiDung = updatedExportOrderDto.MaNguoiDung;
             existingExportOrder.MaKhachHang = updatedExportOrderDto.MaKhachHang;
             existingExportOrder.NgayXuat = updatedExportOrderDto.NgayXuat;
-            existingExportOrder.HinhThucThanhToan = updatedExportOrderDto.HinhThucThanhToan;
-            existingExportOrder.PhiVanChuyen = updatedExportOrderDto.PhiVanChuyen;
+                existingExportOrder.HinhThucThanhToan = "";
+                existingExportOrder.PhiVanChuyen = updatedExportOrderDto.PhiVanChuyen;
             existingExportOrder.TrangThai = updatedExportOrderDto.TrangThai;
 
             try

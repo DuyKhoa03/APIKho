@@ -21,6 +21,16 @@ public partial class ChiTietPhieuXuatHang
 
     public string? Image { get; set; }
 
+    public string? Image2 { get; set; }
+
+    public string? Image3 { get; set; }
+
+    public string? Image4 { get; set; }
+
+    public string? Image5 { get; set; }
+
+    public string? Image6 { get; set; }
+
     public virtual PhieuXuatHang MaPhieuXuatHangNavigation { get; set; } = null!;
 
     public virtual SanPham MaSanPhamNavigation { get; set; } = null!;

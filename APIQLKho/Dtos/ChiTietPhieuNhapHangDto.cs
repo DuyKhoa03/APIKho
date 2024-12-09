@@ -9,7 +9,17 @@
         public decimal? DonGiaNhap { get; set; }
         public int? TrangThai { get; set; }
         public string? Image { get; set; }
-        public IFormFile? Img { get; set; } // Để nhận file ảnh tải lên
+        public string? Image2 { get; set; }
+
+        public string? Image3 { get; set; }
+
+        public string? Image4 { get; set; }
+
+        public string? Image5 { get; set; }
+
+        public string? Image6 { get; set; }
+        public List<IFormFile>? Images { get; set; } // Danh sách file ảnh tải lên
+
     }
 
 }

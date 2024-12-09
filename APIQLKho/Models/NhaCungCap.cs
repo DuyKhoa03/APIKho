@@ -20,4 +20,6 @@ public partial class NhaCungCap
     public bool? Hide { get; set; }
 
     public virtual ICollection<PhieuNhapHang> PhieuNhapHangs { get; set; } = new List<PhieuNhapHang>();
+
+    public virtual ICollection<SanPham> SanPhams { get; set; } = new List<SanPham>();
 }

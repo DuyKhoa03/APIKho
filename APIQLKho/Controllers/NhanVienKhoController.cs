@@ -1,5 +1,7 @@
 ﻿using APIQLKho.Dtos;
 using APIQLKho.Models;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,11 +13,13 @@ namespace APIQLKho.Controllers
     {
         private readonly ILogger<NhanVienKhoController> _logger;
         private readonly QlkhohangContext _context;
+        private readonly Cloudinary _cloudinary;
 
-        public NhanVienKhoController(ILogger<NhanVienKhoController> logger, QlkhohangContext context)
+        public NhanVienKhoController(ILogger<NhanVienKhoController> logger, QlkhohangContext context, Cloudinary cloudinary)
         {
             _logger = logger;
             _context = context;
+            _cloudinary = cloudinary;
         }
 
         /// <summary>
@@ -101,23 +105,24 @@ namespace APIQLKho.Controllers
                 Hide = false
             };
 
-            // Xử lý ảnh tải lên
+            // Upload ảnh lên Cloudinary
             if (newEmployeeDto.Img != null && newEmployeeDto.Img.Length > 0)
             {
-                var fileName = Path.GetFileName(newEmployeeDto.Img.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                var uploadParams = new ImageUploadParams
                 {
-                    await newEmployeeDto.Img.CopyToAsync(stream);
+                    File = new FileDescription(newEmployeeDto.Img.FileName, newEmployeeDto.Img.OpenReadStream()),
+                    Folder = "warehouse-employees", // Tên thư mục Cloudinary
+                    Transformation = new Transformation().Crop("limit").Width(300).Height(300)
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                if (uploadResult.StatusCode != System.Net.HttpStatusCode.OK)
+                {
+                    return BadRequest("Failed to upload image to Cloudinary.");
                 }
 
-                //  `Hinhanh` trong `NhanVienKho` để lưu đường dẫn ảnh
-                newEmployee.Hinhanh = "/UploadedImages/" + fileName;
-            }
-            else
-            {
-                newEmployee.Hinhanh = ""; // Trường hợp không có ảnh
+                // Gán URL ảnh từ Cloudinary
+                newEmployee.Hinhanh = uploadResult.SecureUrl.ToString();
             }
 
             _context.NhanVienKhos.Add(newEmployee);
@@ -148,18 +153,31 @@ namespace APIQLKho.Controllers
             existingEmployee.Sdt = updatedEmployeeDto.Sdt;
             existingEmployee.NamSinh = updatedEmployeeDto.NamSinh;
 
-            // Xử lý ảnh tải lên (nếu có)
+            // Upload ảnh mới lên Cloudinary
             if (updatedEmployeeDto.Img != null && updatedEmployeeDto.Img.Length > 0)
             {
-                var fileName = Path.GetFileName(updatedEmployeeDto.Img.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                // Xóa ảnh cũ trên Cloudinary nếu có
+                if (!string.IsNullOrEmpty(existingEmployee.Hinhanh))
                 {
-                    await updatedEmployeeDto.Img.CopyToAsync(stream);
+                    var publicId = new Uri(existingEmployee.Hinhanh).Segments.Last().Split('.')[0]; // Trích xuất Public ID từ URL
+                    var deletionParams = new DeletionParams(publicId);
+                    await _cloudinary.DestroyAsync(deletionParams);
                 }
 
-                existingEmployee.Hinhanh = "/UploadedImages/" + fileName;
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(updatedEmployeeDto.Img.FileName, updatedEmployeeDto.Img.OpenReadStream()),
+                    Folder = "warehouse-employees",
+                    Transformation = new Transformation().Crop("limit").Width(300).Height(300)
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                if (uploadResult.StatusCode != System.Net.HttpStatusCode.OK)
+                {
+                    return BadRequest("Failed to upload image to Cloudinary.");
+                }
+
+                existingEmployee.Hinhanh = uploadResult.SecureUrl.ToString();
             }
 
             try
@@ -197,6 +215,13 @@ namespace APIQLKho.Controllers
                 return NotFound("Warehouse employee not found.");
             }
 
+            // Xóa ảnh trên Cloudinary nếu có
+            if (!string.IsNullOrEmpty(employee.Hinhanh))
+            {
+                var publicId = new Uri(employee.Hinhanh).Segments.Last().Split('.')[0]; // Trích xuất Public ID từ URL
+                var deletionParams = new DeletionParams(publicId);
+                await _cloudinary.DestroyAsync(deletionParams);
+            }
             // Cập nhật trường Hide thành true thay vì xóa nhân viên kho
             employee.Hide = true;
             try

@@ -1,5 +1,7 @@
 ﻿using APIQLKho.Dtos;
 using APIQLKho.Models;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,13 +13,14 @@ namespace APIQLKho.Controllers
     {
         private readonly ILogger<NhaCungCapController> _logger;
         private readonly QlkhohangContext _context;
+        private readonly Cloudinary _cloudinary;
 
-        public NhaCungCapController(ILogger<NhaCungCapController> logger, QlkhohangContext context)
+        public NhaCungCapController(ILogger<NhaCungCapController> logger, QlkhohangContext context, Cloudinary cloudinary)
         {
             _logger = logger;
             _context = context;
+            _cloudinary = cloudinary;
         }
-
         /// <summary>
         /// Lấy danh sách tất cả các nhà cung cấp.
         /// </summary>
@@ -113,23 +116,24 @@ namespace APIQLKho.Controllers
                 Hide = false
             };
 
-            // Xử lý ảnh tải lên
+            // Upload ảnh lên Cloudinary
             if (newSupplierDto.Img != null && newSupplierDto.Img.Length > 0)
             {
-                var fileName = Path.GetFileName(newSupplierDto.Img.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                var uploadParams = new ImageUploadParams
                 {
-                    await newSupplierDto.Img.CopyToAsync(stream);
+                    File = new FileDescription(newSupplierDto.Img.FileName, newSupplierDto.Img.OpenReadStream()),
+                    Folder = "supplier-images", // Tên thư mục Cloudinary
+                    Transformation = new Transformation().Crop("limit").Width(300).Height(300)
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                if (uploadResult.StatusCode != System.Net.HttpStatusCode.OK)
+                {
+                    return BadRequest("Failed to upload image to Cloudinary.");
                 }
 
-                // Giả sử bạn có trường `Image` trong `NhaCungCap` để lưu đường dẫn ảnh
-                newSupplier.Image = "/UploadedImages/" + fileName;
-            }
-            else
-            {
-                newSupplier.Image = ""; // Trường hợp không có ảnh
+                // Gán URL ảnh từ Cloudinary
+                newSupplier.Image = uploadResult.SecureUrl.ToString();
             }
 
             _context.NhaCungCaps.Add(newSupplier);
@@ -161,29 +165,31 @@ namespace APIQLKho.Controllers
             existingSupplier.Email = updatedSupplierDto.Email;
             existingSupplier.Sdt = updatedSupplierDto.Sdt;
 
-            // Xử lý cập nhật hình ảnh
+            // Upload ảnh mới lên Cloudinary
             if (updatedSupplierDto.Img != null && updatedSupplierDto.Img.Length > 0)
             {
-                // Xóa hình ảnh cũ nếu có
+                // Xóa ảnh cũ trên Cloudinary nếu có
                 if (!string.IsNullOrEmpty(existingSupplier.Image))
                 {
-                    var oldImagePath = Path.Combine(Directory.GetCurrentDirectory(), existingSupplier.Image.TrimStart('/'));
-                    if (System.IO.File.Exists(oldImagePath))
-                    {
-                        System.IO.File.Delete(oldImagePath);
-                    }
+                    var publicId = new Uri(existingSupplier.Image).Segments.Last().Split('.')[0]; // Trích xuất Public ID từ URL
+                    var deletionParams = new DeletionParams(publicId);
+                    await _cloudinary.DestroyAsync(deletionParams);
                 }
 
-                // Lưu hình ảnh mới
-                var fileName = Path.GetFileName(updatedSupplierDto.Img.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                var uploadParams = new ImageUploadParams
                 {
-                    await updatedSupplierDto.Img.CopyToAsync(stream);
+                    File = new FileDescription(updatedSupplierDto.Img.FileName, updatedSupplierDto.Img.OpenReadStream()),
+                    Folder = "supplier-images",
+                    Transformation = new Transformation().Crop("limit").Width(300).Height(300)
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                if (uploadResult.StatusCode != System.Net.HttpStatusCode.OK)
+                {
+                    return BadRequest("Failed to upload image to Cloudinary.");
                 }
 
-                existingSupplier.Image = "/UploadedImages/" + fileName;
+                existingSupplier.Image = uploadResult.SecureUrl.ToString();
             }
 
             try
@@ -221,6 +227,13 @@ namespace APIQLKho.Controllers
                 return NotFound("Supplier not found.");
             }
 
+            // Xóa ảnh trên Cloudinary nếu có
+            if (!string.IsNullOrEmpty(supplier.Image))
+            {
+                var publicId = new Uri(supplier.Image).Segments.Last().Split('.')[0]; // Trích xuất Public ID từ URL
+                var deletionParams = new DeletionParams(publicId);
+                await _cloudinary.DestroyAsync(deletionParams);
+            }
             // Cập nhật trường Hide thành true thay vì xóa
             supplier.Hide = true;
             try

@@ -1,5 +1,7 @@
 ﻿using APIQLKho.Dtos;
 using APIQLKho.Models;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,12 +14,15 @@ namespace APIQLKho.Controllers
     {
         private readonly ILogger<BlogController> _logger;
         private readonly QlkhohangContext _context;
+        private readonly Cloudinary _cloudinary;
 
-        public BlogController(ILogger<BlogController> logger, QlkhohangContext context)
+        public BlogController(ILogger<BlogController> logger, QlkhohangContext context, Cloudinary cloudinary)
         {
             _logger = logger;
             _context = context;
+            _cloudinary = cloudinary;
         }
+
 
         /// <summary>
         /// Lấy danh sách tất cả các blog, bao gồm thông tin người dùng nếu cần, và chỉ lấy các blog không bị ẩn.
@@ -100,22 +105,24 @@ namespace APIQLKho.Controllers
                 MaNguoiDung = blogDto.MaNguoiDung
             };
 
-            // Xử lý ảnh tải lên
+            // Upload ảnh lên Cloudinary
             if (blogDto.Image != null && blogDto.Image.Length > 0)
             {
-                var fileName = Path.GetFileName(blogDto.Image.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                var uploadParams = new ImageUploadParams
                 {
-                    await blogDto.Image.CopyToAsync(stream);
+                    File = new FileDescription(blogDto.Image.FileName, blogDto.Image.OpenReadStream()),
+                    Folder = "blog-images", // Tên thư mục Cloudinary
+                    Transformation = new Transformation().Crop("limit").Width(800).Height(800)
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                if (uploadResult.StatusCode != System.Net.HttpStatusCode.OK)
+                {
+                    return BadRequest("Failed to upload image to Cloudinary.");
                 }
 
-                newBlog.Anh = "/UploadedImages/" + fileName;
-            }
-            else
-            {
-                newBlog.Anh = ""; // Trường hợp không có ảnh
+                // Gán URL ảnh từ Cloudinary
+                newBlog.Anh = uploadResult.SecureUrl.ToString();
             }
 
             _context.Blogs.Add(newBlog);
@@ -151,29 +158,32 @@ namespace APIQLKho.Controllers
             existingBlog.Hide = updatedBlogDto.Hide;
             existingBlog.MaNguoiDung = updatedBlogDto.MaNguoiDung;
 
-            // Xử lý ảnh tải lên
+            // Upload ảnh mới lên Cloudinary
             if (updatedBlogDto.Image != null && updatedBlogDto.Image.Length > 0)
             {
-                // Xóa ảnh cũ nếu có
+                // Xóa ảnh cũ trên Cloudinary nếu có
                 if (!string.IsNullOrEmpty(existingBlog.Anh))
                 {
-                    var oldImagePath = Path.Combine(Directory.GetCurrentDirectory(), existingBlog.Anh.TrimStart('/'));
-                    if (System.IO.File.Exists(oldImagePath))
-                    {
-                        System.IO.File.Delete(oldImagePath);
-                    }
+                    var publicId = new Uri(existingBlog.Anh).Segments.Last().Split('.')[0]; // Trích xuất Public ID từ URL
+                    var deletionParams = new DeletionParams(publicId);
+                    await _cloudinary.DestroyAsync(deletionParams);
                 }
 
-                // Lưu ảnh mới
-                var fileName = Path.GetFileName(updatedBlogDto.Image.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                // Tải ảnh mới lên Cloudinary
+                var uploadParams = new ImageUploadParams
                 {
-                    await updatedBlogDto.Image.CopyToAsync(stream);
+                    File = new FileDescription(updatedBlogDto.Image.FileName, updatedBlogDto.Image.OpenReadStream()),
+                    Folder = "blog-images",
+                    Transformation = new Transformation().Crop("limit").Width(800).Height(800)
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                if (uploadResult.StatusCode != System.Net.HttpStatusCode.OK)
+                {
+                    return BadRequest("Failed to upload image to Cloudinary.");
                 }
 
-                existingBlog.Anh = "/UploadedImages/" + fileName;
+                existingBlog.Anh = uploadResult.SecureUrl.ToString();
             }
 
             try
@@ -209,14 +219,12 @@ namespace APIQLKho.Controllers
                 return NotFound("Blog not found.");
             }
 
-            // Xóa ảnh cũ nếu có
+            // Xóa ảnh trên Cloudinary nếu có
             if (!string.IsNullOrEmpty(blog.Anh))
             {
-                var imagePath = Path.Combine(Directory.GetCurrentDirectory(), blog.Anh.TrimStart('/'));
-                if (System.IO.File.Exists(imagePath))
-                {
-                    System.IO.File.Delete(imagePath);
-                }
+                var publicId = new Uri(blog.Anh).Segments.Last().Split('.')[0];
+                var deletionParams = new DeletionParams(publicId);
+                await _cloudinary.DestroyAsync(deletionParams);
             }
 
             // Xóa blog khỏi database

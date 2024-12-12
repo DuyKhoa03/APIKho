@@ -6,6 +6,8 @@ using System.Drawing.Imaging;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using ZXing;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 
 namespace APIQLKho.Controllers
 {
@@ -15,11 +17,12 @@ namespace APIQLKho.Controllers
     {
         private readonly ILogger<SanPhamController> _logger;
         private readonly QlkhohangContext _context;
-
-        public SanPhamController(ILogger<SanPhamController> logger, QlkhohangContext context)
+        private readonly Cloudinary _cloudinary;
+        public SanPhamController(ILogger<SanPhamController> logger, QlkhohangContext context, Cloudinary cloudinary)
         {
             _logger = logger;
             _context = context;
+            _cloudinary = cloudinary;
         }
 
 		/// <summary>
@@ -146,33 +149,35 @@ namespace APIQLKho.Controllers
                 NgayTao = DateTime.Now,
                 TrangThai = true,
                 Hide = false,
-                
-                
             };
 
             // Xử lý danh sách ảnh tải lên
             if (newProductDto.Images != null && newProductDto.Images.Any())
             {
-                var imagePaths = new List<string>();
+                var imageUrls = new List<string>();
                 foreach (var img in newProductDto.Images)
                 {
-                    var fileName = Path.GetFileName(img.FileName);
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    var uploadParams = new ImageUploadParams
                     {
-                        await img.CopyToAsync(stream);
+                        File = new FileDescription(img.FileName, img.OpenReadStream()),
+                        Folder = "products", // Thư mục trên Cloudinary
+                        Transformation = new Transformation().Crop("limit").Width(800).Height(800)
+                    };
+
+                    var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                    if (uploadResult.StatusCode != System.Net.HttpStatusCode.OK)
+                    {
+                        return BadRequest("Failed to upload image to Cloudinary.");
                     }
 
-                    imagePaths.Add("/UploadedImages/" + fileName);
+                    imageUrls.Add(uploadResult.SecureUrl.ToString());
                 }
-
-                // Gán đường dẫn ảnh vào các trường Image, Image2, ...
-                newProduct.Image = imagePaths.ElementAtOrDefault(0); // Ảnh 1
-                newProduct.Image2 = imagePaths.ElementAtOrDefault(1); // Ảnh 2
-                newProduct.Image3 = imagePaths.ElementAtOrDefault(2); // Ảnh 3
-                newProduct.Image4 = imagePaths.ElementAtOrDefault(3); // Ảnh 4
-                newProduct.Image5 = imagePaths.ElementAtOrDefault(4); // Ảnh 5
+                // Gán đường dẫn ảnh từ Cloudinary vào sản phẩm
+                newProduct.Image = imageUrls.ElementAtOrDefault(0); // Ảnh 1
+                newProduct.Image2 = imageUrls.ElementAtOrDefault(1); // Ảnh 2
+                newProduct.Image3 = imageUrls.ElementAtOrDefault(2); // Ảnh 3
+                newProduct.Image4 = imageUrls.ElementAtOrDefault(3); // Ảnh 4
+                newProduct.Image5 = imageUrls.ElementAtOrDefault(4); // Ảnh 5
             }
             else
             {
@@ -187,10 +192,9 @@ namespace APIQLKho.Controllers
             // Thêm sản phẩm mới vào cơ sở dữ liệu
             _context.SanPhams.Add(newProduct);
             await _context.SaveChangesAsync();
-
+            // Tạo mã vạch cho sản phẩm
             try
             {
-                // Tạo mã vạch
                 var barcodeWriter = new BarcodeWriterPixelData
                 {
                     Format = BarcodeFormat.CODE_128,
@@ -204,16 +208,14 @@ namespace APIQLKho.Controllers
 
                 var pixelData = barcodeWriter.Write(newProduct.MaSanPham.ToString());
 
-                // Lưu mã vạch dưới dạng hình ảnh
-                var barcodeFileName = $"barcode_{newProduct.MaSanPham}.png";
-                var barcodeFilePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", barcodeFileName);
-
+                // Chuyển đổi mã vạch thành hình ảnh
                 using (var bitmap = new Bitmap(pixelData.Width, pixelData.Height, PixelFormat.Format32bppRgb))
                 {
                     var bitmapData = bitmap.LockBits(
                         new Rectangle(0, 0, bitmap.Width, bitmap.Height),
                         ImageLockMode.WriteOnly,
                         PixelFormat.Format32bppRgb);
+
                     try
                     {
                         Marshal.Copy(pixelData.Pixels, 0, bitmapData.Scan0, pixelData.Pixels.Length);
@@ -223,21 +225,37 @@ namespace APIQLKho.Controllers
                         bitmap.UnlockBits(bitmapData);
                     }
 
-                    // Lưu file hình ảnh mã vạch
-                    bitmap.Save(barcodeFilePath, ImageFormat.Png);
+                    // Lưu mã vạch tạm thời vào MemoryStream
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        bitmap.Save(memoryStream, ImageFormat.Png);
+                        memoryStream.Seek(0, SeekOrigin.Begin);
+
+                        // Tải mã vạch lên Cloudinary
+                        var uploadParams = new ImageUploadParams
+                        {
+                            File = new FileDescription("barcode.png", memoryStream),
+                            Folder = "barcodes", // Thư mục mã vạch trên Cloudinary
+                        };
+
+                        var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                        if (uploadResult.StatusCode != System.Net.HttpStatusCode.OK)
+                        {
+                            return BadRequest("Failed to upload barcode to Cloudinary.");
+                        }
+
+                        // Gán URL mã vạch vào sản phẩm
+                        newProduct.MaVach = uploadResult.SecureUrl.ToString();
+                    }
                 }
 
-                // Cập nhật đường dẫn mã vạch vào sản phẩm
-                newProduct.MaVach = "/UploadedImages/" + barcodeFileName;
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                // Ghi log lỗi nếu tạo mã vạch thất bại
-                _logger.LogError(ex, "Error generating barcode");
-                throw;
+                _logger.LogError(ex, "Error generating or uploading barcode.");
+                return StatusCode(500, "Error generating or uploading barcode.");
             }
-
             return CreatedAtAction(nameof(GetById), new { id = newProduct.MaSanPham }, newProduct);
         }
 
@@ -303,29 +321,32 @@ namespace APIQLKho.Controllers
                 //    }
                 //}
 
-                // Lưu danh sách ảnh mới
-                var imagePaths = new List<string>();
+                var imageUrls = new List<string>();
                 foreach (var img in updatedProductDto.Images)
                 {
-                    var fileName = Path.GetFileName(img.FileName);
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    var uploadParams = new ImageUploadParams
                     {
-                        await img.CopyToAsync(stream);
+                        File = new FileDescription(img.FileName, img.OpenReadStream()),
+                        Folder = "products",
+                        Transformation = new Transformation().Crop("limit").Width(800).Height(800)
+                    };
+
+                    var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                    if (uploadResult.StatusCode != System.Net.HttpStatusCode.OK)
+                    {
+                        return BadRequest("Failed to upload image to Cloudinary.");
                     }
 
-                    imagePaths.Add("/UploadedImages/" + fileName);
+                    imageUrls.Add(uploadResult.SecureUrl.ToString());
                 }
 
-                // Gán đường dẫn ảnh mới vào các trường Image, Image2, ...
-                existingProduct.Image = imagePaths.ElementAtOrDefault(0);
-                existingProduct.Image2 = imagePaths.ElementAtOrDefault(1);
-                existingProduct.Image3 = imagePaths.ElementAtOrDefault(2);
-                existingProduct.Image4 = imagePaths.ElementAtOrDefault(3);
-                existingProduct.Image5 = imagePaths.ElementAtOrDefault(4);
+                // Cập nhật các URL ảnh mới
+                existingProduct.Image = imageUrls.ElementAtOrDefault(0);
+                existingProduct.Image2 = imageUrls.ElementAtOrDefault(1);
+                existingProduct.Image3 = imageUrls.ElementAtOrDefault(2);
+                existingProduct.Image4 = imageUrls.ElementAtOrDefault(3);
+                existingProduct.Image5 = imageUrls.ElementAtOrDefault(4);
             }
-
             try
             {
                 await _context.SaveChangesAsync();
@@ -341,12 +362,8 @@ namespace APIQLKho.Controllers
                     throw;
                 }
             }
-
             return NoContent();
         }
-
-
-
         /// <summary>
         /// Xóa một sản phẩm dựa vào ID.
         /// </summary>

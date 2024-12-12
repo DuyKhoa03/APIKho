@@ -1,4 +1,5 @@
 ﻿using APIQLKho.Models;
+using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -13,7 +14,15 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LoginPath = "/User/Login";
         options.AccessDeniedPath = "/User/AccessDenied";
     });
+builder.Services.AddSingleton(provider =>
+{
+    var config = provider.GetRequiredService<IConfiguration>();
+    var cloudName = config["Cloudinary:CloudName"];
+    var apiKey = config["Cloudinary:ApiKey"];
+    var apiSecret = config["Cloudinary:ApiSecret"];
 
+    return new Cloudinary(new Account(cloudName, apiKey, apiSecret));
+});
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("ManagerOnly", policy =>

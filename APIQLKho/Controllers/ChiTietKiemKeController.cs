@@ -1,5 +1,7 @@
 ﻿using APIQLKho.Dtos;
 using APIQLKho.Models;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,13 +13,14 @@ namespace APIQLKho.Controllers
     {
         private readonly ILogger<ChiTietKiemKeController> _logger;
         private readonly QlkhohangContext _context;
+        private readonly Cloudinary _cloudinary;
 
-        public ChiTietKiemKeController(ILogger<ChiTietKiemKeController> logger, QlkhohangContext context)
+        public ChiTietKiemKeController(ILogger<ChiTietKiemKeController> logger, QlkhohangContext context, Cloudinary cloudinary)
         {
             _logger = logger;
             _context = context;
+            _cloudinary = cloudinary;
         }
-
         /// <summary>
         /// Lấy danh sách tất cả các chi tiết kiểm kê
         /// </summary>
@@ -141,33 +144,36 @@ namespace APIQLKho.Controllers
                 TrangThai = detailDto.TrangThai,
                 NguyenNhan = detailDto.NguyenNhan
             };
-
-            // Xử lý danh sách ảnh tải lên (nếu có)
+            // Upload ảnh lên Cloudinary
             if (detailDto.Images != null && detailDto.Images.Any())
             {
-                var imagePaths = new List<string>();
+                var imageUrls = new List<string>();
                 foreach (var img in detailDto.Images)
                 {
-                    var fileName = Path.GetFileName(img.FileName);
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    var uploadParams = new ImageUploadParams
                     {
-                        await img.CopyToAsync(stream);
+                        File = new FileDescription(img.FileName, img.OpenReadStream()),
+                        Folder = "inventory-details", // Tên thư mục trên Cloudinary
+                        Transformation = new Transformation().Crop("limit").Width(800).Height(800)
+                    };
+
+                    var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                    if (uploadResult.StatusCode != System.Net.HttpStatusCode.OK)
+                    {
+                        return BadRequest("Failed to upload image to Cloudinary.");
                     }
 
-                    imagePaths.Add("/UploadedImages/" + fileName);
+                    imageUrls.Add(uploadResult.SecureUrl.ToString());
                 }
 
-                // Gán danh sách ảnh vào các trường Anh, Anh2, ...
-                newDetail.Anh = imagePaths.ElementAtOrDefault(0);
-                newDetail.Anh2 = imagePaths.ElementAtOrDefault(1);
-                newDetail.Anh3 = imagePaths.ElementAtOrDefault(2);
-                newDetail.Anh4 = imagePaths.ElementAtOrDefault(3);
-                newDetail.Anh5 = imagePaths.ElementAtOrDefault(4);
-                newDetail.Anh6 = imagePaths.ElementAtOrDefault(5);
+                // Gán URL ảnh vào các trường Anh, Anh2, ...
+                newDetail.Anh = imageUrls.ElementAtOrDefault(0);
+                newDetail.Anh2 = imageUrls.ElementAtOrDefault(1);
+                newDetail.Anh3 = imageUrls.ElementAtOrDefault(2);
+                newDetail.Anh4 = imageUrls.ElementAtOrDefault(3);
+                newDetail.Anh5 = imageUrls.ElementAtOrDefault(4);
+                newDetail.Anh6 = imageUrls.ElementAtOrDefault(5);
             }
-
             _context.ChiTietKiemKes.Add(newDetail);
             await _context.SaveChangesAsync();
 
@@ -207,46 +213,52 @@ namespace APIQLKho.Controllers
             if (detailDto.Images != null && detailDto.Images.Any())
             {
                 // Xóa ảnh cũ
-        //        var oldImages = new List<string>
-        //{
-        //    existingDetail.Anh,
-        //    existingDetail.Anh2,
-        //    existingDetail.Anh3,
-        //    existingDetail.Anh4,
-        //    existingDetail.Anh5,
-        //    existingDetail.Anh6
-        //};
+                //        var oldImages = new List<string>
+                //{
+                //    existingDetail.Anh,
+                //    existingDetail.Anh2,
+                //    existingDetail.Anh3,
+                //    existingDetail.Anh4,
+                //    existingDetail.Anh5,
+                //    existingDetail.Anh6
+                //};
 
-        //        foreach (var oldImage in oldImages.Where(img => !string.IsNullOrEmpty(img)))
-        //        {
-        //            var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), oldImage.TrimStart('/'));
-        //            if (System.IO.File.Exists(oldFilePath))
-        //            {
-        //                System.IO.File.Delete(oldFilePath);
-        //            }
-        //        }
+                //        foreach (var oldImage in oldImages.Where(img => !string.IsNullOrEmpty(img)))
+                //        {
+                //            var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), oldImage.TrimStart('/'));
+                //            if (System.IO.File.Exists(oldFilePath))
+                //            {
+                //                System.IO.File.Delete(oldFilePath);
+                //            }
+                //        }
 
                 // Lưu ảnh mới
-                var imagePaths = new List<string>();
+                var imageUrls = new List<string>();
                 foreach (var img in detailDto.Images)
                 {
-                    var fileName = Path.GetFileName(img.FileName);
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages", fileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    var uploadParams = new ImageUploadParams
                     {
-                        await img.CopyToAsync(stream);
+                        File = new FileDescription(img.FileName, img.OpenReadStream()),
+                        Folder = "inventory-details",
+                        Transformation = new Transformation().Crop("limit").Width(800).Height(800)
+                    };
+
+                    var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                    if (uploadResult.StatusCode != System.Net.HttpStatusCode.OK)
+                    {
+                        return BadRequest("Failed to upload image to Cloudinary.");
                     }
 
-                    imagePaths.Add("/UploadedImages/" + fileName);
+                    imageUrls.Add(uploadResult.SecureUrl.ToString());
                 }
 
-                existingDetail.Anh = imagePaths.ElementAtOrDefault(0);
-                existingDetail.Anh2 = imagePaths.ElementAtOrDefault(1);
-                existingDetail.Anh3 = imagePaths.ElementAtOrDefault(2);
-                existingDetail.Anh4 = imagePaths.ElementAtOrDefault(3);
-                existingDetail.Anh5 = imagePaths.ElementAtOrDefault(4);
-                existingDetail.Anh6 = imagePaths.ElementAtOrDefault(5);
+                // Cập nhật URL ảnh mới
+                existingDetail.Anh = imageUrls.ElementAtOrDefault(0);
+                existingDetail.Anh2 = imageUrls.ElementAtOrDefault(1);
+                existingDetail.Anh3 = imageUrls.ElementAtOrDefault(2);
+                existingDetail.Anh4 = imageUrls.ElementAtOrDefault(3);
+                existingDetail.Anh5 = imageUrls.ElementAtOrDefault(4);
+                existingDetail.Anh6 = imageUrls.ElementAtOrDefault(5);
             }
 
             await _context.SaveChangesAsync();
@@ -270,15 +282,13 @@ namespace APIQLKho.Controllers
             {
                 return NotFound("Detail not found.");
             }
-
-            // Xóa ảnh liên quan nếu có
-            if (!string.IsNullOrEmpty(detail.Anh))
+            // Xóa ảnh liên quan trên Cloudinary nếu có
+            var imageUrls = new List<string> { detail.Anh, detail.Anh2, detail.Anh3, detail.Anh4, detail.Anh5, detail.Anh6 };
+            foreach (var imageUrl in imageUrls.Where(url => !string.IsNullOrEmpty(url)))
             {
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), detail.Anh.TrimStart('/'));
-                if (System.IO.File.Exists(filePath))
-                {
-                    System.IO.File.Delete(filePath);
-                }
+                var publicId = new Uri(imageUrl).Segments.Last().Split('.')[0]; // Trích xuất Public ID từ URL
+                var deletionParams = new DeletionParams(publicId);
+                await _cloudinary.DestroyAsync(deletionParams);
             }
 
             // Xóa bản ghi

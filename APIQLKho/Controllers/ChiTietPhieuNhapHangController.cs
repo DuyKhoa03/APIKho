@@ -86,7 +86,41 @@ namespace APIQLKho.Controllers
 
             return Ok(details);
         }
+        /// <summary>
+        /// Lấy chi tiết phiếu nhập hàng theo mã sản phẩm
+        /// </summary>
+        /// <param name="id">Mã sản phẩm</param>
+        [HttpGet("{id}")]
+        public async Task<ActionResult<IEnumerable<ChiTietPhieuNhapHangDto>>> GetByProductId(int id)
+        {
+            var details = await _context.ChiTietPhieuNhapHangs
+                                        .Include(ct => ct.MaSanPhamNavigation)
+                                        .Include(ct => ct.MaPhieuNhapHangNavigation)
+                                        .Where(ct => ct.MaSanPham == id)
+                                        .Select(ct => new ChiTietPhieuNhapHangDto
+                                        {
+                                            MaPhieuNhapHang = ct.MaPhieuNhapHang,
+                                            MaSanPham = ct.MaSanPham,
+                                            TenSanPham = ct.MaSanPhamNavigation.TenSanPham,
+                                            SoLuong = ct.SoLuong,
+                                            DonGiaNhap = ct.DonGiaNhap,
+                                            TrangThai = ct.TrangThai,
+                                            Image = ct.Image,
+                                            Image2 = ct.Image2,
+                                            Image3 = ct.Image3,
+                                            Image4 = ct.Image4,
+                                            Image5 = ct.Image5,
+                                            Image6 = ct.Image6
+                                        })
+                                        .ToListAsync();
 
+            if (!details.Any())
+            {
+                return NotFound("No details found for the specified receipt ID.");
+            }
+
+            return Ok(details);
+        }
         //lay phieu chi tiet phieu dua vao ma phieu va ma sp
         [HttpGet("{phieuXuatId}/{sanPhamId}")]
 		public async Task<ActionResult<ChiTietPhieuNhapHangDto>> GetDetail(int phieuNhapId, int sanPhamId)

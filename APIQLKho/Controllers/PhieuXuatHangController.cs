@@ -207,7 +207,7 @@ namespace APIQLKho.Controllers
         /// <returns>Danh sách các phiếu xuất hàng khớp với từ khóa.</returns>
         // GET: api/phieuxuathang/search/{keyword}
         [HttpGet("{keyword}")]
-        public async Task<ActionResult<IEnumerable<PhieuXuatHang>>> Search(string keyword)
+        public async Task<ActionResult<IEnumerable<PhieuXuatHangDto>>> Search(string keyword)
         {
             if (string.IsNullOrWhiteSpace(keyword))
             {
@@ -222,7 +222,19 @@ namespace APIQLKho.Controllers
                                               .Where(px => px.MaPhieuXuatHang.ToString().Contains(keyword) ||
                                                            px.MaKhachHangNavigation.TenKhachHang.Contains(keyword) ||
                                                            px.MaNguoiDungNavigation.TenNguoiDung.Contains(keyword))
-                                              .ToListAsync();
+                                              .Select(px => new PhieuXuatHangDto
+                                              {
+                                                  MaPhieuXuatHang = px.MaPhieuXuatHang,
+                                                  NgayXuat = px.NgayXuat,
+                                                  HinhThucThanhToan = px.HinhThucThanhToan,
+                                                  PhiVanChuyen = px.PhiVanChuyen,
+                                                  TrangThai = px.TrangThai,
+                                                  MaNguoiDung = px.MaNguoiDung,
+                                                  TenNguoiDung = px.MaNguoiDungNavigation.TenNguoiDung,
+                                                  MaKhachHang = px.MaKhachHang,
+                                                  TenKhachHang = px.MaKhachHangNavigation.TenKhachHang
+                                              })
+                                             .ToListAsync();
 
             return Ok(searchResults);
         }

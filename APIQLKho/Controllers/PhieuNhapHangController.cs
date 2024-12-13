@@ -80,8 +80,7 @@ namespace APIQLKho.Controllers
 
             return Ok(importOrder);
         }
-
-
+       
         /// <summary>
         /// Thêm mới một phiếu nhập hàng vào cơ sở dữ liệu.
         /// </summary>
@@ -203,7 +202,7 @@ namespace APIQLKho.Controllers
         /// <returns>Danh sách các phiếu nhập hàng khớp với từ khóa.</returns>
         // GET: api/phieunhaphang/search/{keyword}
         [HttpGet("{keyword}")]
-        public async Task<ActionResult<IEnumerable<PhieuNhapHang>>> Search(string keyword)
+        public async Task<ActionResult<IEnumerable<PhieuNhapHangDto>>> Search(string keyword)
         {
             if (string.IsNullOrWhiteSpace(keyword))
             {
@@ -218,7 +217,18 @@ namespace APIQLKho.Controllers
                                               .Where(pn => pn.MaPhieuNhapHang.ToString().Contains(keyword) ||
                                                            pn.MaNhaCungCapNavigation.TenNhaCungCap.Contains(keyword) ||
                                                            pn.MaNguoiDungNavigation.TenNguoiDung.Contains(keyword))
-                                              .ToListAsync();
+                                              .Select(pn => new PhieuNhapHangDto
+                                              {
+                                                  MaPhieuNhapHang = pn.MaPhieuNhapHang,
+                                                  NgayNhap = pn.NgayNhap,
+                                                  PhiVanChuyen = pn.PhiVanChuyen,
+                                                  TrangThai = pn.TrangThai,
+                                                  MaNguoiDung = pn.MaNguoiDung,
+                                                  TenNguoiDung = pn.MaNguoiDungNavigation.TenNguoiDung,
+                                                  MaNhaCungCap = pn.MaNhaCungCap,
+                                                  TenNhaCungCap = pn.MaNhaCungCapNavigation.TenNhaCungCap
+                                              })
+                                             .ToListAsync();
 
             return Ok(searchResults);
         }

@@ -183,7 +183,7 @@ namespace APIQLKho.Controllers
         /// <returns>Danh sách các phiếu kiểm kê khớp với từ khóa.</returns>
         // GET: api/kiemke/search/{keyword}
         [HttpGet("{keyword}")]
-        public async Task<ActionResult<IEnumerable<KiemKe>>> Search(string keyword)
+        public async Task<ActionResult<IEnumerable<KiemKeDto>>> Search(string keyword)
         {
             if (string.IsNullOrWhiteSpace(keyword))
             {
@@ -193,9 +193,16 @@ namespace APIQLKho.Controllers
             var searchResults = await _context.KiemKes
                                               .Include(k => k.MaNhanVienKhoNavigation)
                                               .Include(k => k.ChiTietKiemKes)
-                                              .Where(k => k.NgayKiemKe.ToString().Contains(keyword) ||
+                                              .Where(k => k.MaKiemKe.ToString().Contains(keyword) ||
                                                           k.MaNhanVienKhoNavigation.TenNhanVien.Contains(keyword))
-                                              .ToListAsync();
+                                              .Select(k => new KiemKeDto
+                                              {
+                                                  MaKiemKe = k.MaKiemKe,
+                                                  NgayKiemKe = k.NgayKiemKe,
+                                                  MaNhanVienKho = k.MaNhanVienKho,
+                                                  TenNhanVienKho = k.MaNhanVienKhoNavigation.TenNhanVien
+                                              })
+                                                .ToListAsync();
 
             return Ok(searchResults);
         }
